@@ -393,7 +393,10 @@ button[type="submit"]:hover {
 .authors-section { margin-top:36px; }
 .section-header { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:16px; }
 .section-header h2 { margin:0; font-size:1.125rem; color:#1f2937; }
-.section-controls { display:flex; gap:12px; }
+.section-controls { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+/* Make search input able to shrink and take remaining space on small screens */
+.section-controls .search-input { flex: 1 1 auto; min-width: 0; }
+.section-controls select { flex: 0 0 auto; min-width: 120px; }
 .search-input { padding:10px 12px; border-radius:10px; border:1px solid #e6edf3; min-width:220px; }
 
 .authors-list { display:flex; flex-direction:column; gap:12px; }
@@ -486,8 +489,7 @@ a { color: var(--color-primary); }
 
 @media (max-width:900px) {
     .dashboard-top { flex-direction:column; align-items:flex-start; }
-    .top-right { width:100%; display:flex; justify-content:flex-start; }
-    .primary-cta { width:100%; text-align:center; }
+    .top-right { width:100%; display:flex; justify-content:flex-start; gap:8px; }
     .kpi-row { flex-direction:column; align-items:flex-start; gap:8px; }
 }
 
