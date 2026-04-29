@@ -513,3 +513,20 @@ a { color: var(--color-primary); }
     .author-row { padding: 12px; }
     .book-table th, .book-table td { font-size: 0.95rem; padding: 8px 10px; }
 }
+
+/* Mobile fix: clip any inner card overflow and reduce CTA size to prevent protruding edges */
+@media (max-width:420px) {
+    /* Clip contents to the rounded container so inner shadows don't protrude */
+    .container { overflow: hidden; }
+    /* Prevent the page from horizontally scrolling due to small artifacts */
+    html, body { overflow-x: hidden; }
+
+    /* Slightly smaller KPI cards with reduced shadow on very small screens */
+    .kpi-row { gap: 6px; }
+    .kpi-card { box-shadow: var(--shadow-soft); padding: 10px 12px; margin: 0; transform: none; }
+    .kpi-card:hover { transform: none; box-shadow: var(--shadow-soft); }
+
+    /* Tighter CTA so it doesn't overflow visually — keep it readable but compact */
+    .primary-cta { max-width: 260px; padding: 10px 14px; font-size: 0.95rem; border-radius: 22px; }
+    .top-right { justify-content: center; gap: 8px; }
+}
