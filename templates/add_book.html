@@ -9,6 +9,7 @@
     <div class="container narrow"> <h1>Rate a New Book</h1>
         
         <form method="POST" class="rating-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="next" value="{{ next }}">
             <div class="form-group">
                 <label>Book Title</label>

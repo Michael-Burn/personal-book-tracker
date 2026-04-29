@@ -65,6 +65,7 @@
         <button class="modal-close" aria-label="Close">×</button>
         <h2 id="addModalTitle">Rate a New Book</h2>
         <form method="POST" action="{{ url_for('add') }}" class="rating-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="next" value="{{ request.path }}">
             <div class="form-group">
                 <label>Book Title</label>
