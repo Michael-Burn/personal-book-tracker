@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Edit Rating</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Edit: {{ book.title }}</h1>
+        <form method="POST">
+            <input type="text" name="title" value="{{ book.title }}" required>
+            <input type="text" name="author" value="{{ book.author }}" required>
+            
+            <label>Rating (1-5):</label>
+            <select name="rating">
+                {% for i in range(1, 6) %}
+                <option value="{{ i }}" {% if book.rating == i %}selected{% endif %}>{{ i }}</option>
+                {% endfor %}
+            </select>
+            
+            <button type="submit" class="btn-primary">Update Rating</button>
+        </form>
+        <br>
+        <a href="/authors" class="back-link">Cancel</a>
+    </div>
+</body>
+</html>

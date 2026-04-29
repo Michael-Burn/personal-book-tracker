@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Add New Book - Kwalitec Library</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container narrow"> <h1>Rate a New Book</h1>
+        
+        <form method="POST" class="rating-form">
+            <input type="hidden" name="next" value="{{ next }}">
+            <div class="form-group">
+                <label>Book Title</label>
+                <input type="text" name="title" placeholder="e.g. The Great Gatsby" required>
+            </div>
+
+            <div class="form-group">
+                <label>Author</label>
+                <input type="text" name="author" placeholder="e.g. F. Scott Fitzgerald" required>
+            </div>
+            
+            <div class="form-group">
+                <label>My Rating</label>
+                <select name="rating">
+                    <option value="5">★★★★★ - Amazing</option>
+                    <option value="4">★★★★☆ - Great</option>
+                    <option value="3">★★★☆☆ - Good</option>
+                    <option value="2">★★☆☆☆ - Okay</option>
+                    <option value="1">★☆☆☆☆ - Bad</option>
+                </select>
+            </div>
+            
+            <button type="submit" class="btn-primary">Save to Library</button>
+            <a href="{{ next or url_for('authors_page') }}" class="back-link">← Back</a>
+        </form>
+    </div>
+</body>
+</html>

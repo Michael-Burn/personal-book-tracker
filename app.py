@@ -38,11 +38,9 @@ csrf.init_app(app)
 # Render provides TLS; Talisman will enforce secure headers in front of that.
 talisman.init_app(app, content_security_policy=None)
 
-# Create the database automatically for local sqlite development only.
-# In production prefer migrations (`flask db upgrade`).
-if app.config['SQLALCHEMY_DATABASE_URI'].startswith('sqlite') and os.environ.get('FLASK_ENV') != 'production':
-    with app.app_context():
-        db.create_all()
+# Do not create the database at import time. For local development
+# create the sqlite DB only when running the app directly (not when
+# invoked by Flask CLI or migration commands).
 
 @app.route('/')
 def index():
@@ -145,4 +143,9 @@ def add():
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 5000))
     debug = os.environ.get('FLASK_DEBUG', '0') == '1'
+    # For local sqlite development only, create DB when running directly.
+    if app.config['SQLALCHEMY_DATABASE_URI'].startswith('sqlite') and os.environ.get('FLASK_ENV') != 'production':
+        with app.app_context():
+            db.create_all()
+
     app.run(debug=debug, host='0.0.0.0', port=port)

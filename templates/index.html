@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>My Book Ratings</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="dashboard-top">
+            <div class="top-left">
+                <h1 class="page-title">Kwalitec Reading Library</h1>
+                <div class="kpi-row">
+                    <div class="kpi-card">
+                        <div class="kpi-label">👤 Authors</div>
+                        <div class="kpi-value">{{ authors|length }}</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">📚 Total Books</div>
+                        <div class="kpi-value">{{ total_books }}</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">⭐ Avg Rating</div>
+                        <div class="kpi-value">{{ overall_avg }}</div>
+                    </div>
+                </div>
+            </div>
+
+                <div class="top-right">
+                <a href="/" class="secondary-cta">Cover</a>
+                <a href="{{ url_for('add') }}?next={{ request.path }}" class="primary-cta open-add-modal">+ Rate a New Book</a>
+            </div>
+        </div>
+
+        <section class="authors-section">
+            <div class="section-header">
+                <h2>Authors</h2>
+                <div class="section-controls">
+                    <input id="authorSearch" class="search-input" placeholder="Search authors or book titles…" aria-label="Search authors">
+                    <select id="sortSelect" class="search-input" aria-label="Sort authors">
+                        <option value="name_asc">Sort by Name (A–Z)</option>
+                        <option value="count_desc">Sort by Book Count (High → Low)</option>
+                        <option value="rating_desc">Sort by Avg Rating (High → Low)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="authorsList" class="authors-list">
+                {% if authors|length == 0 %}
+                <div class="empty-state">
+                    <div class="empty-emoji">📚</div>
+                    <h3>No authors yet</h3>
+                    <p>Start by adding your first rated book.</p>
+                </div>
+                {% else %}
+                {% for author in authors %}
+                    <a class="author-row" href="/author/{{ author['name'] }}">
+                        <div class="inline-row">
+                            <div class="author-name">{{ author['name'] }}</div>
+                            <div class="muted small">{{ author['titles']|length }} books</div>
+                        </div>
+                        <div class="author-meta">
+                            <div class="author-rating">★ {{ '%.1f'|format(author['avgRating']) }}</div>
+                            <div class="author-action">{{ author['bookCount'] }} books</div>
+                        </div>
+                    </a>
+                {% endfor %}
+                {% endif %}
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // Modal open/close for add-book popup
+        (function(){
+            function openModal(href){
+                var overlay = document.getElementById('addModal');
+                if(!overlay) return;
+                overlay.classList.add('visible');
+                overlay.setAttribute('aria-hidden','false');
+                document.body.style.overflow='hidden';
+                var nextInput = overlay.querySelector('input[name=next]');
+                if(nextInput){
+                    try{
+                        var u = new URL(href, window.location.origin);
+                        if(u.searchParams.get('next')) nextInput.value = u.searchParams.get('next');
+                        else nextInput.value = window.location.pathname;
+                    }catch(e){ nextInput.value = window.location.pathname; }
+                }
+            }
+            function closeModal(){
+                var overlay = document.getElementById('addModal');
+                if(!overlay) return;
+                overlay.classList.remove('visible');
+                overlay.setAttribute('aria-hidden','true');
+                document.body.style.overflow='';
+            }
+            document.addEventListener('click', function(e){
+                var t = e.target.closest('.open-add-modal, .add-link');
+                if(t){ e.preventDefault(); openModal(t.getAttribute('href') || window.location.href); }
+                if(e.target.id === 'addModal' && e.target.classList.contains('visible')) closeModal();
+                if(e.target.closest('.modal-close')) closeModal();
+            });
+            document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeModal(); });
+        })();
+
+        // Client-side authors data, sorting and search
+        const authorsData = {{ authors|tojson }};
+        const authorsListEl = document.getElementById('authorsList');
+        const searchInput = document.getElementById('authorSearch');
+        const sortSelect = document.getElementById('sortSelect');
+        // snackbar for added book
+        function showSnackbar(msg) {
+            let s = document.getElementById('snackbar');
+            if(!s) {
+                s = document.createElement('div');
+                s.id = 'snackbar';
+                s.className = 'snackbar';
+                document.body.appendChild(s);
+            }
+            s.textContent = msg;
+            s.classList.add('visible');
+            setTimeout(()=> s.classList.remove('visible'), 3000);
+        }
+
+        // show toast if ?added=1
+        if (new URLSearchParams(window.location.search).get('added') === '1') {
+            showSnackbar('Book added successfully');
+            // remove param from URL
+            if (history.replaceState) {
+                const url = new URL(window.location);
+                url.searchParams.delete('added');
+                history.replaceState(null, '', url.toString());
+            }
+        }
+
+        // Render helper
+        function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+        function highlight(text, q){
+            if(!q) return escapeHtml(text);
+            const idx = text.toLowerCase().indexOf(q.toLowerCase());
+            if(idx === -1) return escapeHtml(text);
+            return escapeHtml(text.slice(0, idx)) + '<mark>' + escapeHtml(text.slice(idx, idx+q.length)) + '</mark>' + escapeHtml(text.slice(idx+q.length));
+        }
+
+        function renderAuthors(list) {
+            if (!list || list.length === 0) {
+                authorsListEl.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-emoji">📚</div>
+                        <h3>No authors yet</h3>
+                        <p>Start by adding your first rated book.</p>
+                    </div>`;
+                return;
+            }
+            const q = searchInput ? searchInput.value : '';
+            authorsListEl.innerHTML = list.map(a => `
+                <a href="/author/${encodeURIComponent(a.name)}" class="author-row">
+                    <div class="author-name">${highlight(a.name, q)}</div>
+                    <div class="author-meta"><div class="author-rating">⭐ ${a.avgRating.toFixed(2)}</div><div class="author-action muted">${a.bookCount} books</div></div>
+                </a>`).join('');
+        }
+
+        // Filter then sort
+        function getFilteredSorted() {
+            const q = searchInput ? searchInput.value.toLowerCase() : '';
+            let filtered = authorsData.filter(a => {
+                if (!q) return true;
+                const nameMatch = a.name && a.name.toLowerCase().includes(q);
+                const titleMatch = a.titles && a.titles.some(t => (t || '').toLowerCase().includes(q));
+                return nameMatch || titleMatch;
+            });
+            const sort = sortSelect ? sortSelect.value : 'name_asc';
+            if (sort === 'name_asc') {
+                filtered.sort((x,y) => x.name.localeCompare(y.name));
+            } else if (sort === 'count_desc') {
+                filtered.sort((x,y) => y.bookCount - x.bookCount || x.name.localeCompare(y.name));
+            } else if (sort === 'rating_desc') {
+                filtered.sort((x,y) => {
+                    const ax = (a => (a && typeof a === 'number') ? a : (a && a.avgRating ? a.avgRating : 0))(x);
+                    const ay = (b => (b && typeof b === 'number') ? b : (b && b.avgRating ? b.avgRating : 0))(y);
+                    // prefer higher avgRating, then higher bookCount, then name
+                    const diff = ay - ax;
+                    if (Math.abs(diff) > 1e-9) return diff;
+                    const cnt = y.bookCount - x.bookCount;
+                    if (cnt !== 0) return cnt;
+                    return x.name.localeCompare(y.name);
+                });
+            }
+            return filtered;
+        }
+
+        // Initial render
+        renderAuthors(getFilteredSorted());
+
+        if (searchInput) searchInput.addEventListener('input', () => renderAuthors(getFilteredSorted()));
+        if (sortSelect) sortSelect.addEventListener('change', () => renderAuthors(getFilteredSorted()));
+    </script>
+
+    <!-- Add Book Modal -->
+    <div id="addModal" class="modal-overlay" aria-hidden="true">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="addModalTitle">
+        <button class="modal-close" aria-label="Close">×</button>
+        <h2 id="addModalTitle">Rate a New Book</h2>
+        <form method="POST" action="{{ url_for('add') }}" class="rating-form">
+            <input type="hidden" name="next" value="{{ request.path }}">
+            <div class="form-group">
+                <label>Book Title</label>
+                <input type="text" name="title" placeholder="e.g. The Great Gatsby" required>
+            </div>
+            <div class="form-group">
+                <label>Author</label>
+                <input type="text" name="author" placeholder="e.g. F. Scott Fitzgerald" required>
+            </div>
+            <div class="form-group">
+                <label>My Rating</label>
+                <select name="rating">
+                    <option value="5">★★★★★ - Amazing</option>
+                    <option value="4">★★★★☆ - Great</option>
+                    <option value="3">★★★☆☆ - Good</option>
+                    <option value="2">★★☆☆☆ - Okay</option>
+                    <option value="1">★☆☆☆☆ - Bad</option>
+                </select>
+            </div>
+            <div style="display:flex; gap:10px; margin-top:12px;">
+                <button type="submit" class="btn-primary">Save to Library</button>
+            </div>
+        </form>
+      </div>
+    </div>
+</body>
+</html>
