@@ -6,6 +6,7 @@ except ImportError:
     # python-dotenv not installed; continue without loading .env
     pass
 from flask import Flask, render_template, request, redirect, url_for
+from werkzeug.middleware.proxy_fix import ProxyFix
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func
 from flask_migrate import Migrate
@@ -13,6 +14,8 @@ from flask_wtf.csrf import CSRFProtect
 from flask_talisman import Talisman
 
 app = Flask(__name__)
+# If the app runs behind a proxy/load-balancer (Render), fix URL scheme and remote addr.
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
 # Use DATABASE_URL env var when provided (e.g. Postgres URL on hosting)
 # Default to a local sqlite DB inside the instance folder for development only
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///instance/books.db')

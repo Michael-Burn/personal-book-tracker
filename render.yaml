@@ -5,4 +5,9 @@ services:
     plan: free
     branch: prepare-render
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
+    startCommand: bash -lc "python -m flask db upgrade && exec gunicorn app:app"
+    envVars:
+      - key: FLASK_APP
+        value: app.py
+      - key: FLASK_ENV
+        value: production
