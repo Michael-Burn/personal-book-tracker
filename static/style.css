@@ -185,7 +185,8 @@ h1 {
 @media (max-width:900px) {
     .cover-content { flex-direction: column-reverse; text-align: center; gap:20px; }
     .cover-image { flex: 0 0 auto; }
-    .cover-card{ width:220px; height:140px; }
+    /* Keep the cover image square so circular crop looks right */
+    .cover-card{ width:220px; height:220px; }
     .cover-text h1 { font-size: 1.6rem; }
     .cta-btn { width: 100%; justify-content:center; }
 }
@@ -207,7 +208,8 @@ h1 {
     .book-table th, .book-table td { white-space: normal; font-size: 0.95rem; }
     .book-table { display: block; width: 100%; }
     .book-table thead, .book-table tbody, .book-table tr { display: table; width: 100%; table-layout: fixed; }
-    .cover-card { width: 160px; height: 200px; }
+    /* Use square cover card on small screens for consistent circular crop */
+    .cover-card { width: 160px; height: 160px; }
 }
 
 .add-link {
@@ -465,6 +467,9 @@ a { color: var(--color-primary); }
     max-width: 640px;
     width: 100%;
     padding: 20px;
+    /* Ensure very long content scrolls nicely on small screens */
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
     position: relative;
 }
 .modal-close {
@@ -484,4 +489,20 @@ a { color: var(--color-primary); }
     .top-right { width:100%; display:flex; justify-content:flex-start; }
     .primary-cta { width:100%; text-align:center; }
     .kpi-row { flex-direction:column; align-items:flex-start; gap:8px; }
+}
+
+/* Extra-small phones: tighter spacing and full-width modals */
+@media (max-width:420px) {
+    body { padding: 12px 10px; }
+    .container { padding: 10px; border-radius: 8px; }
+    .cover-hero { padding: 24px 12px; }
+    .cover-content { gap: 12px; }
+    .cover-card { width: 140px; height: 140px; }
+    .cover-text h1 { font-size: 1.25rem; }
+    .cover-text .lead { font-size: 0.95rem; max-width: 40ch; }
+    .modal-card { max-width: calc(100% - 24px); padding: 12px; border-radius: 12px; max-height: calc(100vh - 20px); }
+    .modal-overlay { padding: 6px; }
+    .cta-btn, .primary-cta, .add-link { font-size: 0.95rem; padding: 10px 12px; }
+    .author-row { padding: 12px; }
+    .book-table th, .book-table td { font-size: 0.95rem; padding: 8px 10px; }
 }
