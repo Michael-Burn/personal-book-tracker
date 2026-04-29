@@ -47,6 +47,25 @@ csrf.init_app(app)
 # Render provides TLS; Talisman will enforce secure headers in front of that.
 talisman.init_app(app, content_security_policy=None)
 
+# Fallback: if migrations weren't applied on the host (e.g. startup hook didn't run),
+# attempt to create missing tables so the app can respond. This is safe for simple
+# schemas but you should prefer running `flask db upgrade` from Render or the
+# Render dashboard (or via a one-off shell) to apply proper migrations.
+try:
+    from sqlalchemy import inspect
+    with app.app_context():
+        inspector = inspect(db.engine)
+        tables = inspector.get_table_names()
+        if 'book' not in tables:
+            try:
+                app.logger.info('`book` table missing; creating tables with db.create_all()')
+                db.create_all()
+            except Exception:
+                app.logger.exception('Failed to create tables via db.create_all()')
+except Exception:
+    # If inspection fails (no DB configured yet), skip silently; errors will show in logs.
+    pass
+
 # Do not create the database at import time. For local development
 # create the sqlite DB only when running the app directly (not when
 # invoked by Flask CLI or migration commands).
