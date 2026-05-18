@@ -3,6 +3,7 @@ import re
 import io
 import json
 import random
+import math
 import secrets
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -25,7 +26,7 @@ from flask_talisman import Talisman
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
@@ -454,65 +455,156 @@ def top_books(user_id, since=None, limit=5):
 # ─── PNG Share Card Generation ───────────────────────────────
 
 def generate_share_card(username, items, list_type, period_label):
-    """Build and return an 800×500 PNG share card as a BytesIO buffer."""
-    W, H   = 800, 500
-    BG     = (18, 20, 40)
-    ACCENT = (108, 99, 255)
-    WHITE  = (255, 255, 255)
-    MUTED  = (160, 165, 200)
+    """Build and return a premium 1080x1920 portrait PNG share card (WhatsApp Status / Instagram Stories)."""
+    W, H = 1080, 1920
 
-    img  = Image.new('RGB', (W, H), BG)
+    # ── Palette ───────────────────────────────────────────────────────────
+    PURPLE  = (108,  99, 255)
+    EMERALD = ( 52, 211, 153)
+    WHITE   = (255, 255, 255)
+    MUTED   = (162, 158, 208)
+
+    list_col = EMERALD if list_type == 'Books' else PURPLE
+
+    # ── Background gradient ───────────────────────────────────────────────
+    img  = Image.new('RGBA', (W, H))
+    draw = ImageDraw.Draw(img)
+    for y in range(H):
+        t = y / (H - 1)
+        draw.rectangle(
+            [(0, y), (W, y + 1)],
+            fill=(int(10 + 10 * t), int(11 + 5 * t), int(24 + 18 * t), 255),
+        )
+
+    # ── Glow: top-right (always purple) ───────────────────────────────────
+    g1 = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    ImageDraw.Draw(g1).ellipse([(W - 500, -260), (W + 150, 520)], fill=(*PURPLE, 90))
+    img.alpha_composite(g1.filter(ImageFilter.GaussianBlur(120)))
+
+    # ── Glow: bottom-left (list colour) ───────────────────────────────────
+    g2 = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    ImageDraw.Draw(g2).ellipse([(-200, H - 520), (420, H + 210)], fill=(*list_col, 70))
+    img.alpha_composite(g2.filter(ImageFilter.GaussianBlur(110)))
+
     draw = ImageDraw.Draw(img)
 
-    # Accent gradient strip at top
-    for y in range(6):
-        shade = tuple(int(c * (1 - y * 0.12)) for c in ACCENT)
-        draw.rectangle([(0, y), (W, y + 1)], fill=shade)
+    # ── Top accent bar ─────────────────────────────────────────────────────
+    draw.rectangle([(0, 0), (W, 6)], fill=(*list_col, 255))
 
-    # Fonts — requires Pillow ≥10.1 for the size keyword argument
-    try:
-        font_title = ImageFont.load_default(size=30)
-        font_sub   = ImageFont.load_default(size=15)
-        font_item  = ImageFont.load_default(size=19)
-        font_small = ImageFont.load_default(size=13)
-    except TypeError:
-        # Older Pillow fallback — text will be small but functional
-        font_title = font_sub = font_item = font_small = ImageFont.load_default()
+    # ── Font loader ────────────────────────────────────────────────────────
+    BOLD = [
+        '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
+        '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf',
+        '/usr/share/fonts/truetype/ubuntu/Ubuntu-Bold.ttf',
+        '/System/Library/Fonts/Supplemental/Arial Bold.ttf',
+        'C:/Windows/Fonts/arialbd.ttf',
+    ]
+    REGU = [
+        '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+        '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
+        '/usr/share/fonts/truetype/ubuntu/Ubuntu-R.ttf',
+        '/System/Library/Fonts/Supplemental/Arial.ttf',
+        'C:/Windows/Fonts/arial.ttf',
+    ]
 
-    # Header
-    draw.text((40, 28), f"{username}'s Top {len(items)} {list_type}", fill=WHITE, font=font_title)
-    draw.text((40, 68), period_label, fill=MUTED, font=font_sub)
-    draw.rectangle([(40, 93), (W - 40, 95)], fill=ACCENT)
+    def _font(paths, size):
+        for p in paths:
+            if os.path.exists(p):
+                try:
+                    return ImageFont.truetype(p, size)
+                except Exception:
+                    pass
+        return ImageFont.load_default(size=size)
 
-    # Ranked items
-    y = 112
+    fn_username = _font(BOLD, 72)
+    fn_listtype = _font(BOLD, 50)
+    fn_period   = _font(REGU, 22)
+    fn_rank     = _font(BOLD, 36)
+    fn_meta     = _font(REGU, 24)
+    fn_badge    = _font(BOLD, 18)
+    fn_brand    = _font(BOLD, 24)
+    fn_footer   = _font(REGU, 18)
+    fn_cta      = _font(REGU, 20)
+
+    # ── Header ─────────────────────────────────────────────────────────────
+    draw.text((60,  52), f"{username}'s",                 fill=WHITE,          font=fn_username)
+    draw.text((62, 158), f"Top {len(items)} {list_type}", fill=WHITE,          font=fn_listtype)
+    draw.text((62, 230), period_label,                    fill=(*MUTED, 180),  font=fn_period)
+    draw.rectangle([(60, 285), (W - 60, 289)],            fill=(*list_col, 200))
+
+    # ── Star polygon helper ────────────────────────────────────────────────
+    def _star_pts(cx, cy, outer_r, inner_r):
+        pts = []
+        for k in range(10):
+            angle = math.radians(-90 + k * 36)
+            r = outer_r if k % 2 == 0 else inner_r
+            pts.append((cx + r * math.cos(angle), cy + r * math.sin(angle)))
+        return pts
+
+    # ── Ranked rows ────────────────────────────────────────────────────────
+    ROW_Y0 = 310
+    ROW_H  = (H - ROW_Y0 - 260) // max(len(items), 1)
+
     for i, item in enumerate(items, 1):
-        bx, by = 40, y + 2
-        draw.ellipse([(bx, by), (bx + 28, by + 28)], fill=ACCENT)
-        badge_num = str(i)
-        bw = len(badge_num) * 7
-        draw.text((bx + (28 - bw) // 2, by + 6), badge_num, fill=WHITE, font=font_small)
+        ry = ROW_Y0 + (i - 1) * ROW_H
 
+        # Ghost rank numeral (decorative depth)
+        draw.text((52, ry + 18), str(i), fill=(*WHITE, 8), font=fn_username)
+
+        # Badge circle
+        draw.ellipse([(60, ry + 107), (116, ry + 163)], fill=(*list_col, 255))
+        num_str = str(i)
+        nw = int(draw.textlength(num_str, font=fn_badge))
+        draw.text((60 + (56 - nw) // 2, ry + 125), num_str, fill=WHITE, font=fn_badge)
+
+        # Text content
         if list_type == 'Authors':
-            name_line = item['name'][:52]
-            stars = '★' * round(item['avg_rating']) + '☆' * (5 - round(item['avg_rating']))
-            sub_line  = f"{stars}  {item['avg_rating']:.1f}  ·  {item['book_count']} book{'s' if item['book_count'] != 1 else ''}"
+            line1 = item['name'][:38]
+            sub   = f"{item['book_count']} book{'s' if item['book_count'] != 1 else ''} · {item['avg_rating']:.1f} avg"
+            score = f"{item['avg_rating']:.1f}"
         else:
-            name_line = item['title'][:52]
-            sub_line  = f"by {item['author'][:30]}   {'★' * item['rating']}{'☆' * (5 - item['rating'])}"
+            line1 = item['title'][:38]
+            sub   = f"by {item['author'][:42]}"
+            score = str(item['rating'])
 
-        draw.text((82, y + 1), name_line, fill=WHITE, font=font_item)
-        draw.text((82, y + 24), sub_line,  fill=MUTED, font=font_small)
-        y += 64
+        draw.text((134, ry + 96),  line1, fill=WHITE, font=fn_rank)
+        draw.text((134, ry + 152), sub,   fill=MUTED,  font=fn_meta)
 
-    # Footer
-    app_url = os.environ.get('APP_URL', 'booktrackerapp.onrender.com')
-    draw.text((40, H - 26), app_url, fill=MUTED, font=font_small)
-    draw.rectangle([(W - 138, H - 30), (W - 30, H - 12)], fill=ACCENT)
-    draw.text((W - 134, H - 29), 'Book Tracker', fill=WHITE, font=font_small)
+        # Right-aligned rating: score number + drawn star polygon
+        score_w = int(draw.textlength(score, font=fn_rank))
+        star_r  = 14
+        total_w = score_w + 10 + star_r * 2
+        rx0     = W - 60 - total_w
+        draw.text((rx0, ry + 96), score, fill=(*list_col, 230), font=fn_rank)
+        star_cx = rx0 + score_w + 10 + star_r
+        star_cy = ry + 96 + 18
+        draw.polygon(_star_pts(star_cx, star_cy, star_r, 6), fill=(*list_col, 230))
 
+        # Row separator
+        if i < len(items):
+            draw.rectangle(
+                [(130, ry + ROW_H - 1), (W - 60, ry + ROW_H)],
+                fill=(*WHITE, 15),
+            )
+
+    # ── Footer ─────────────────────────────────────────────────────────────
+    FY = H - 260
+    draw.rectangle([(0, FY), (W, FY + 1)], fill=(*WHITE, 20))
+    draw.text((60, FY + 40), 'Kwalitec Library',
+              fill=WHITE, font=fn_brand)
+    draw.text((60, FY + 82), 'https://personal-book-tracker-8xij.onrender.com/login',
+              fill=(*MUTED, 150), font=fn_footer)
+    cta   = 'Track Your Reading'
+    cta_w = int(draw.textlength(cta, font=fn_cta))
+    draw.rounded_rectangle(
+        [(W - cta_w - 80, FY + 36), (W - 60, FY + 72)],
+        radius=14, fill=(*list_col, 255),
+    )
+    draw.text((W - cta_w - 60, FY + 44), cta, fill=WHITE, font=fn_cta)
+
+    # ── Export ─────────────────────────────────────────────────────────────
     buf = io.BytesIO()
-    img.save(buf, format='PNG')
+    img.convert('RGB').save(buf, format='PNG')
     buf.seek(0)
     return buf
 
