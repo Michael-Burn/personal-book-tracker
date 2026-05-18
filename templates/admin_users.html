@@ -188,13 +188,18 @@
                 <span><strong>{{ orphaned_count }}</strong> book{{ 's' if orphaned_count != 1 }} not assigned to any user.</span>
                 <form method="POST" action="{{ url_for('admin_assign_orphaned') }}" class="admin-orphan-form">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    {% set assignable = users | selectattr('username', '!=', 'Admin') | list %}
+                    {% if assignable %}
                     <select name="user_id" class="admin-orphan-select" required>
                         <option value="">— assign to —</option>
-                        {% for u in users %}{% if u.username != 'Admin' %}
+                        {% for u in assignable %}
                         <option value="{{ u.id }}">{{ u.username }}</option>
-                        {% endif %}{% endfor %}
+                        {% endfor %}
                     </select>
                     <button type="submit" class="admin-btn admin-btn--ok">Assign</button>
+                    {% else %}
+                    <span style="font-style:italic;opacity:.75;">Register a user account first, then assign here.</span>
+                    {% endif %}
                 </form>
             </div>
             {% endif %}
