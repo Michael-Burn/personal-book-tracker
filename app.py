@@ -868,6 +868,46 @@ def admin_delete_user(user_id):
     return redirect(url_for('admin_users'))
 
 
+def _seed_admin_if_needed():
+    """Create the Admin account on first deploy; assign orphaned books to Kwalitec.
+    Runs once at startup — safe to leave in place, no-ops when already done."""
+    with app.app_context():
+        try:
+            admin = User.query.filter_by(username=ADMIN_USERNAME).first()
+            if not admin:
+                pw = secrets.token_urlsafe(16)
+                admin = User(
+                    username=ADMIN_USERNAME,
+                    password_hash=generate_password_hash(pw),
+                    is_admin=True,
+                    is_active=True,
+                )
+                db.session.add(admin)
+                db.session.commit()
+                print(f'[SEED] Admin user created. ONE-TIME PASSWORD: {pw}', flush=True)
+            else:
+                print('[SEED] Admin user already exists — skipping.', flush=True)
+
+            # Assign any books/quotes with no owner to Kwalitec
+            owner = User.query.filter_by(username='Kwalitec').first()
+            if owner:
+                orphaned_books = Book.query.filter_by(user_id=None).all()
+                orphaned_quotes = Quote.query.filter_by(user_id=None).all()
+                for b in orphaned_books:
+                    b.user_id = owner.id
+                for q in orphaned_quotes:
+                    q.user_id = owner.id
+                if orphaned_books or orphaned_quotes:
+                    db.session.commit()
+                    print(f'[SEED] Assigned {len(orphaned_books)} book(s) and '
+                          f'{len(orphaned_quotes)} quote(s) to Kwalitec.', flush=True)
+        except Exception as exc:
+            print(f'[SEED] Skipped (DB not ready yet?): {exc}', flush=True)
+
+
+_seed_admin_if_needed()
+
+
 if __name__ == '__main__':
     port  = int(os.environ.get('PORT', 5000))
     debug = os.environ.get('FLASK_DEBUG', '0') == '1'
