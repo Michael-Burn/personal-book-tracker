@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Create Account — Book Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="auth-outer">
+        <div class="auth-card">
+            <div class="auth-logo">📚</div>
+            <h1 class="auth-title">Create your library</h1>
+            <p class="auth-sub">Pick a username and start tracking your reads</p>
+
+            {% if error %}
+            <div class="alert-error">{{ error }}</div>
+            {% endif %}
+
+            <form method="POST" class="auth-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" name="username" autocomplete="username"
+                           pattern="[A-Za-z0-9_]{3,30}"
+                           title="3–30 characters: letters, numbers, underscores"
+                           placeholder="e.g. Alice, Bob42, or book_lover"
+                           required autofocus>
+                    <div class="field-hint">Letters, numbers, and underscores · 3–30 characters</div>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" name="password" autocomplete="new-password" minlength="8" required>
+                    <div class="field-hint">At least 8 characters</div>
+                </div>
+                <div class="form-group">
+                    <label>Confirm Password</label>
+                    <input type="password" name="confirm" autocomplete="new-password" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Security Question</label>
+                    <select name="security_question" required>
+                        <option value="" disabled selected>— choose a question —</option>
+                        {% for q in security_questions %}
+                        <option value="{{ q }}">{{ q }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="field-hint">Used to recover your account if you forget your password.</div>
+                </div>
+                <div class="form-group">
+                    <label>Your Answer</label>
+                    <input type="text" name="security_answer" autocomplete="off"
+                           placeholder="Not case-sensitive" required minlength="2">
+                </div>
+
+                <button type="submit" class="btn-primary auth-submit">Create Account</button>
+            </form>
+
+            <p class="auth-switch">Already have an account? <a href="{{ url_for('login') }}">Sign in</a></p>
+        </div>
+    </div>
+</body>
+</html>

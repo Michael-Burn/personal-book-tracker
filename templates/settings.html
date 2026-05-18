@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Change Password — Book Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="sett-body">
+<div class="sett-wrap">
+
+    <!-- Nav -->
+    <nav class="sett-nav">
+        <a href="{{ url_for('authors_page') }}" class="sett-nav-back">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            My Library
+        </a>
+        <span class="sett-nav-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+            Change Password
+        </span>
+    </nav>
+
+    <!-- ── Change Password panel ──────────────────────────── -->
+    <section class="sett-panel">
+        <div class="sett-panel-info">
+            <div class="sett-panel-icon sett-icon--purple">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <h2 class="sett-panel-title">Change Password</h2>
+            <p class="sett-panel-desc">Update the password you use to sign in. You will be signed out after changing it.</p>
+        </div>
+        <div class="sett-panel-form">
+            {% if error %}
+            <div class="alert-error">{{ error }}</div>
+            {% endif %}
+            <form method="POST" action="{{ url_for('change_password') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="sett-field">
+                    <label>Current Password</label>
+                    <input type="password" name="current_password" autocomplete="current-password" required>
+                </div>
+                <div class="sett-field">
+                    <label>New Password</label>
+                    <input type="password" name="new_password" autocomplete="new-password" minlength="8" required>
+                    <p class="sett-hint">At least 8 characters.</p>
+                </div>
+                <div class="sett-field">
+                    <label>Confirm New Password</label>
+                    <input type="password" name="confirm_password" autocomplete="new-password" minlength="8" required>
+                </div>
+                <div class="sett-form-footer">
+                    <button type="submit" class="sett-btn sett-btn--primary">Update Password</button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+</div>
+</body>
+</html>
+    <section class="sett-panel">
+        <div class="sett-panel-info">
+            <div class="sett-panel-icon sett-icon--teal">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <h2 class="sett-panel-title">Security Question</h2>
+            <p class="sett-panel-desc">Set a recovery question so you can reset your password without contacting an admin.</p>
+            {% if user_security_question %}
+            <div class="sett-current-q">
+                <span class="sett-current-q-label">Current question</span>
+                <span class="sett-current-q-val">{{ user_security_question }}</span>
+            </div>
+            {% endif %}
+        </div>
+        <div class="sett-panel-form">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% for category, message in messages %}
+                {% if category == 'sq_error' %}
+                <div class="alert-error">{{ message }}</div>
+                {% elif category == 'sq_success' %}
+                <div class="alert-success">{{ message }}</div>
+                {% endif %}
+              {% endfor %}
+            {% endwith %}
+            <form method="POST" action="{{ url_for('set_security_question') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="sett-field">
+                    <label>Security Question</label>
+                    <select name="security_question" required>
+                        <option value="" disabled {% if not user_security_question %}selected{% endif %}>— choose a question —</option>
+                        {% for q in security_questions %}
+                        <option value="{{ q }}" {% if q == user_security_question %}selected{% endif %}>{{ q }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="sett-field">
+                    <label>Your Answer</label>
+                    <input type="text" name="security_answer" autocomplete="off"
+                           placeholder="Not case-sensitive" required minlength="2">
+                    <p class="sett-hint">Stored securely — only you will know this.</p>
+                </div>
+                <div class="sett-field">
+                    <label>Confirm with Current Password</label>
+                    <input type="password" name="sq_password" autocomplete="current-password" required>
+                </div>
+                <div class="sett-form-footer">
+                    <button type="submit" class="sett-btn sett-btn--primary">
+                        {{ 'Update' if user_security_question else 'Save' }} Security Question
+                    </button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+</div>
+</body>
+</html>

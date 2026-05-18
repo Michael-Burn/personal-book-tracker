@@ -1,74 +1,161 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>My Book Ratings</title>
+    <title>{{ current_user.username }}'s Library — Book Tracker</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
-    <div class="container">
-        <div class="dashboard-top">
-            <div class="top-left">
-                <h1 class="page-title">Kwalitec Reading Library</h1>
-                <div class="kpi-row">
-                    <div class="kpi-card">
-                        <div class="kpi-label">👤 Authors</div>
-                        <div class="kpi-value">{{ authors|length }}</div>
-                    </div>
-                    <div class="kpi-card">
-                        <div class="kpi-label">📚 Total Books</div>
-                        <div class="kpi-value">{{ total_books }}</div>
-                    </div>
-                    <div class="kpi-card">
-                        <div class="kpi-label">⭐ Avg Rating</div>
-                        <div class="kpi-value">{{ overall_avg }}</div>
+<body class="db-body">
+    <div class="db-shell">
+        <div class="db-layout">
+        <div class="db-card">
+
+            <!-- ── Navigation ─────────────────────────────── -->
+            <nav class="db-nav">
+                <a class="db-logo" href="{{ url_for('authors_page') }}">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                    <span>Book Tracker</span>
+                </a>
+                <div class="db-nav-actions">
+                    <a href="{{ url_for('share_page', username=current_user.username) }}" class="db-nav-btn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                        Share
+                    </a>
+                    <a href="{{ url_for('change_password') }}" class="db-nav-btn db-nav-btn--icon" title="Change Password">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+                    </a>
+                    <a href="{{ url_for('quotes_page') }}" class="db-nav-btn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        Quotes
+                    </a>
+                    {% if current_user.username == 'Admin' %}
+                    <a href="{{ url_for('admin_users') }}" class="db-nav-btn db-nav-btn--admin">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        Admin
+                    </a>
+                    {% endif %}
+                    <a href="{{ url_for('logout') }}" class="db-nav-btn db-nav-btn--out">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                        Sign Out
+                    </a>
+                </div>
+            </nav>
+
+            <!-- ── Profile ────────────────────────────────── -->
+            <div class="db-profile">
+                <div class="db-profile-left">
+                    <form id="avatarForm" action="{{ url_for('upload_avatar') }}" method="POST" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <label class="db-avatar" title="Click to change photo">
+                            {% if current_user.avatar %}
+                            <img src="{{ url_for('static', filename='avatars/' + current_user.avatar) }}" class="avatar-img" alt="Avatar">
+                            {% else %}
+                            <div class="avatar-initials">{{ current_user.username[0]|upper }}</div>
+                            {% endif %}
+                            <div class="avatar-edit-overlay">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            </div>
+                            <input type="file" name="avatar" accept="image/jpeg,image/png,image/gif,image/webp" style="display:none" onchange="document.getElementById('avatarForm').submit()">
+                        </label>
+                    </form>
+                    <div class="db-profile-text">
+                        <h1 class="db-profile-name">{{ current_user.username }}'s Library</h1>
+                        <p class="db-profile-meta">Member since {{ current_user.created_at.strftime('%B %Y') }}{% with msgs = get_flashed_messages(category_filter=['avatar_error']) %}{% if msgs %}&nbsp;·&nbsp;<span class="db-err">{{ msgs[0] }}</span>{% endif %}{% endwith %}</p>
                     </div>
                 </div>
+                <div class="db-profile-right">
+                <a href="{{ url_for('add') }}?next={{ request.path }}" class="db-cta open-add-modal">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Add Book
+                </a>
+                <div class="db-stats">
+                    <div class="db-stat">
+                        <span class="db-stat-val">{{ authors|length }}</span>
+                        <span class="db-stat-lbl">Authors</span>
+                    </div>
+                    <div class="db-stat-sep"></div>
+                    <div class="db-stat">
+                        <span class="db-stat-val">{{ total_books }}</span>
+                        <span class="db-stat-lbl">Books</span>
+                    </div>
+                    <div class="db-stat-sep"></div>
+                    <div class="db-stat">
+                        <span class="db-stat-val">{{ overall_avg }}</span>
+                        <span class="db-stat-lbl">Avg Rating</span>
+                    </div>
+                </div><!-- /.db-stats -->
+                </div><!-- /.db-profile-right -->
             </div>
 
-                <div class="top-right">
-                <a href="/" class="secondary-cta">Cover</a>
-                <a href="{{ url_for('add') }}?next={{ request.path }}" class="primary-cta open-add-modal">+ Rate a New Book</a>
-            </div>
-        </div>
-
-        <section class="authors-section">
-            <div class="section-header">
-                <h2>Authors</h2>
-                <div class="section-controls">
-                    <input id="authorSearch" class="search-input" placeholder="Search authors or book titles…" aria-label="Search authors">
-                    <select id="sortSelect" class="search-input" aria-label="Sort authors">
-                        <option value="name_asc">Sort by Name (A–Z)</option>
-                        <option value="count_desc">Sort by Book Count (High → Low)</option>
-                        <option value="rating_desc">Sort by Avg Rating (High → Low)</option>
+            <!-- ── Toolbar ────────────────────────────────── -->
+            <div class="db-toolbar">
+                <div class="db-toolbar-top">
+                    <h2 class="db-section-lbl">Authors</h2>
+                </div>
+                <div class="db-controls">
+                    <div class="db-search-wrap">
+                        <svg class="db-search-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <input id="authorSearch" class="db-search" placeholder="Search authors or titles…" aria-label="Search">
+                    </div>
+                    <select id="sortSelect" class="db-sort" aria-label="Sort">
+                        <option value="name_asc">Name (A–Z)</option>
+                        <option value="count_desc">Most Books</option>
+                        <option value="rating_desc">Top Rated</option>
                     </select>
                 </div>
             </div>
 
-            <div id="authorsList" class="authors-list">
+            <!-- ── Authors list (JS-rendered) ──────────────── -->
+            <div id="authorsList" class="db-list">
                 {% if authors|length == 0 %}
-                <div class="empty-state">
-                    <div class="empty-emoji">📚</div>
-                    <h3>No authors yet</h3>
-                    <p>Start by adding your first rated book.</p>
+                <div class="db-empty">
+                    <div class="db-empty-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                    </div>
+                    <h3 class="db-empty-title">Your library starts here.</h3>
+                    <p class="db-empty-sub">Track books, discover favourite authors, and build<br>your personal reading archive.</p>
+                    <a href="{{ url_for('add') }}?next={{ request.path }}" class="db-cta db-empty-cta open-add-modal">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Add Your First Book
+                    </a>
                 </div>
                 {% else %}
                 {% for author in authors %}
-                    <a class="author-row" href="/author/{{ author['name'] }}">
-                        <div class="inline-row">
-                            <div class="author-name">{{ author['name'] }}</div>
-                            <div class="muted small">{{ author['titles']|length }} books</div>
+                <a class="db-row" href="/author/{{ author['name'] }}">
+                    <div class="db-row-left">
+                        <div class="db-initial">{{ author['name'][0]|upper }}</div>
+                        <div>
+                            <div class="db-row-name">{{ author['name'] }}</div>
+                            <div class="db-row-sub">{{ author['bookCount'] }} book{{ 's' if author['bookCount'] != 1 else '' }}</div>
                         </div>
-                        <div class="author-meta">
-                            <div class="author-rating">★ {{ '%.1f'|format(author['avgRating']) }}</div>
-                            <div class="author-action">{{ author['bookCount'] }} books</div>
-                        </div>
-                    </a>
+                    </div>
+                    <div class="db-row-right">
+                        <span class="db-row-rating">★ {{ '%.1f'|format(author['avgRating']) }}</span>
+                        <svg class="db-row-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                    </div>
+                </a>
                 {% endfor %}
                 {% endif %}
             </div>
-        </section>
-    </div>
+
+        </div><!-- /.db-card -->
+
+        <!-- ── Vertical quote strip ─────────────────────── -->
+        <div id="quoteCard" class="qc-card" style="display:none" aria-live="polite">
+            <svg class="qc-mark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/></svg>
+            <p class="qc-quote" id="qcText"></p>
+            <div class="qc-meta">
+                <span class="qc-book" id="qcBook"></span>
+                <span class="qc-sep">&middot;</span>
+                <span id="qcAuthor"></span>
+                <span class="qc-sep qc-page-sep" id="qcPageSep" style="display:none">&middot;</span>
+                <span class="qc-page" id="qcPage" style="display:none"></span>
+            </div>
+        </div>
+
+        </div><!-- /.db-layout -->
+    </div><!-- /.db-shell -->
 
     <script>
         // Modal open/close for add-book popup
@@ -109,7 +196,8 @@
         const authorsListEl = document.getElementById('authorsList');
         const searchInput = document.getElementById('authorSearch');
         const sortSelect = document.getElementById('sortSelect');
-        // snackbar for added book
+
+        // Snackbar
         function showSnackbar(msg) {
             let s = document.getElementById('snackbar');
             if(!s) {
@@ -122,11 +210,8 @@
             s.classList.add('visible');
             setTimeout(()=> s.classList.remove('visible'), 3000);
         }
-
-        // show toast if ?added=1
         if (new URLSearchParams(window.location.search).get('added') === '1') {
             showSnackbar('Book added successfully');
-            // remove param from URL
             if (history.replaceState) {
                 const url = new URL(window.location);
                 url.searchParams.delete('added');
@@ -134,42 +219,54 @@
             }
         }
 
-        // Render helper
-        function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+        // Colour palette for author initials
+        const _palette = ['#6C63FF','#22C55E','#F59E0B','#EF4444','#3B82F6','#EC4899','#F97316','#14B8A6','#8B5CF6','#06B6D4'];
+        function authorColor(name) {
+            let h = 0;
+            for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+            return _palette[Math.abs(h) % _palette.length];
+        }
 
+        function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
         function highlight(text, q){
             if(!q) return escapeHtml(text);
             const idx = text.toLowerCase().indexOf(q.toLowerCase());
             if(idx === -1) return escapeHtml(text);
-            return escapeHtml(text.slice(0, idx)) + '<mark>' + escapeHtml(text.slice(idx, idx+q.length)) + '</mark>' + escapeHtml(text.slice(idx+q.length));
+            return escapeHtml(text.slice(0,idx))+'<mark>'+escapeHtml(text.slice(idx,idx+q.length))+'</mark>'+escapeHtml(text.slice(idx+q.length));
         }
 
         function renderAuthors(list) {
             if (!list || list.length === 0) {
-                authorsListEl.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-emoji">📚</div>
-                        <h3>No authors yet</h3>
-                        <p>Start by adding your first rated book.</p>
-                    </div>`;
+                authorsListEl.innerHTML = `<div class="db-empty"><div class="db-empty-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div><h3 class="db-empty-title">No results found.</h3><p class="db-empty-sub">Try a different search term.</p></div>`;
                 return;
             }
             const q = searchInput ? searchInput.value : '';
-            authorsListEl.innerHTML = list.map(a => `
-                <a href="/author/${encodeURIComponent(a.name)}" class="author-row">
-                    <div class="author-name">${highlight(a.name, q)}</div>
-                    <div class="author-meta"><div class="author-rating">⭐ ${a.avgRating.toFixed(2)}</div><div class="author-action muted">${a.bookCount} books</div></div>
-                </a>`).join('');
+            authorsListEl.innerHTML = list.map(a => {
+                const color = authorColor(a.name);
+                const initial = escapeHtml(a.name[0].toUpperCase());
+                const bookLabel = a.bookCount === 1 ? '1 book' : `${a.bookCount} books`;
+                return `<a href="/author/${encodeURIComponent(a.name)}" class="db-row">
+                    <div class="db-row-left">
+                        <div class="db-initial" style="background:${color}">${initial}</div>
+                        <div>
+                            <div class="db-row-name">${highlight(a.name, q)}</div>
+                            <div class="db-row-sub">${bookLabel}</div>
+                        </div>
+                    </div>
+                    <div class="db-row-right">
+                        <span class="db-row-rating">★ ${a.avgRating.toFixed(1)}</span>
+                        <svg class="db-row-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                    </div>
+                </a>`;
+            }).join('');
         }
 
-        // Filter then sort
         function getFilteredSorted() {
             const q = searchInput ? searchInput.value.toLowerCase() : '';
             let filtered = authorsData.filter(a => {
                 if (!q) return true;
-                const nameMatch = a.name && a.name.toLowerCase().includes(q);
-                const titleMatch = a.titles && a.titles.some(t => (t || '').toLowerCase().includes(q));
-                return nameMatch || titleMatch;
+                return (a.name && a.name.toLowerCase().includes(q)) ||
+                       (a.titles && a.titles.some(t => (t||'').toLowerCase().includes(q)));
             });
             const sort = sortSelect ? sortSelect.value : 'name_asc';
             if (sort === 'name_asc') {
@@ -177,25 +274,44 @@
             } else if (sort === 'count_desc') {
                 filtered.sort((x,y) => y.bookCount - x.bookCount || x.name.localeCompare(y.name));
             } else if (sort === 'rating_desc') {
-                filtered.sort((x,y) => {
-                    const ax = (a => (a && typeof a === 'number') ? a : (a && a.avgRating ? a.avgRating : 0))(x);
-                    const ay = (b => (b && typeof b === 'number') ? b : (b && b.avgRating ? b.avgRating : 0))(y);
-                    // prefer higher avgRating, then higher bookCount, then name
-                    const diff = ay - ax;
-                    if (Math.abs(diff) > 1e-9) return diff;
-                    const cnt = y.bookCount - x.bookCount;
-                    if (cnt !== 0) return cnt;
-                    return x.name.localeCompare(y.name);
-                });
+                filtered.sort((x,y) => (y.avgRating - x.avgRating) || (y.bookCount - x.bookCount) || x.name.localeCompare(y.name));
             }
             return filtered;
         }
 
-        // Initial render
         renderAuthors(getFilteredSorted());
-
         if (searchInput) searchInput.addEventListener('input', () => renderAuthors(getFilteredSorted()));
         if (sortSelect) sortSelect.addEventListener('change', () => renderAuthors(getFilteredSorted()));
+
+        // Quote card: load once per page load
+        (function(){
+            var card   = document.getElementById('quoteCard');
+            var qcText = document.getElementById('qcText');
+            var qcBook = document.getElementById('qcBook');
+            var qcAuth = document.getElementById('qcAuthor');
+            var qcPage = document.getElementById('qcPage');
+            var qcPageSep = document.getElementById('qcPageSep');
+            if(!card) return;
+
+            fetch('/api/quotes/random')
+                .then(function(r){ return r.status === 204 ? null : r.json(); })
+                .then(function(data){
+                    if(!data){ card.style.display = 'none'; return; }
+                    qcText.textContent = data.text;
+                    qcBook.textContent = data.book_title;
+                    qcAuth.textContent = data.author;
+                    if(data.page_ref){
+                        qcPage.textContent = data.page_ref;
+                        qcPage.style.display = '';
+                        qcPageSep.style.display = '';
+                    } else {
+                        qcPage.style.display = 'none';
+                        qcPageSep.style.display = 'none';
+                    }
+                    card.style.display = '';
+                })
+                .catch(function(){ card.style.display = 'none'; });
+        })();
     </script>
 
     <!-- Add Book Modal -->

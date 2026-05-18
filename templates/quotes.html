@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Reading Diary — Book Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="db-body">
+    <div class="db-shell">
+        <div class="db-card">
+
+            <!-- ── Navigation ──────────────────────────────── -->
+            <nav class="db-nav">
+                <a class="db-logo" href="{{ url_for('authors_page') }}">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                    <span>Book Tracker</span>
+                </a>
+                <div class="db-nav-actions">
+                    <a href="{{ url_for('authors_page') }}" class="db-nav-btn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                        Library
+                    </a>
+                    <a href="{{ url_for('logout') }}" class="db-nav-btn db-nav-btn--out">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                        Sign Out
+                    </a>
+                </div>
+            </nav>
+
+            <!-- ── Hero ─────────────────────────────────────── -->
+            <div class="qt-hero">
+                <div class="ab-hero-text">
+                    <p class="ab-eyebrow">Reading Diary</p>
+                    <h1 class="ab-title">Your Saved Passages</h1>
+                </div>
+                <div class="ab-stat qt-hero-stat">
+                    <span class="ab-stat-val">{{ quote_count }}</span>
+                    <span class="ab-stat-lbl">Quote{{ 's' if quote_count != 1 else '' }}</span>
+                </div>
+            </div>
+
+            <!-- ── Quotes list ───────────────────────────────── -->
+            {% if groups %}
+            <div class="qt-list">
+                {% for group in groups %}
+                <div class="qt-book-group">
+                    <div class="qt-book-header">
+                        <div class="qt-book-info">
+                            <span class="qt-group-title">{{ group.book.title }}</span>
+                            <span class="qt-sep">&middot;</span>
+                            <span class="qt-group-author">{{ group.book.author }}</span>
+                        </div>
+                        <span class="qt-group-count">{{ group.quotes|length }} passage{{ 's' if group.quotes|length != 1 else '' }}</span>
+                    </div>
+                    <div class="qt-group-quotes">
+                        {% for q in group.quotes %}
+                        <div class="qt-entry">
+                            <div class="qt-entry-body">
+                                <svg class="qt-mark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/></svg>
+                                <p class="qt-text">{{ q.text }}</p>
+                            </div>
+                            <div class="qt-entry-meta">
+                                <span class="qt-date">{{ q.date_added.strftime('%b %d, %Y') }}</span>
+                                {% if q.page_ref %}<span class="qt-sep">&middot;</span><span class="qt-page">{{ q.page_ref }}</span>{% endif %}
+                            </div>
+                            <div class="qt-entry-actions">
+                                <button type="button" class="qt-edit-btn"
+                                        data-quote='{{ {"id": q.id, "text": q.text, "page_ref": q.page_ref or "", "book_title": group.book.title, "author": group.book.author} | tojson }}'
+                                        title="Edit passage">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                </button>
+                                <form method="POST" action="{{ url_for('delete_quote', quote_id=q.id) }}" style="margin:0">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="qt-del-btn" onclick="return confirm('Remove this passage?')" title="Delete">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="db-empty">
+                <div class="db-empty-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                </div>
+                <h3 class="db-empty-title">Your diary starts here.</h3>
+                <p class="db-empty-sub">Open any author's page and tap the speech-bubble icon<br>to save a favourite passage.</p>
+                <a href="{{ url_for('authors_page') }}" class="db-cta db-empty-cta">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                    Go to Library
+                </a>
+            </div>
+            {% endif %}
+
+        </div><!-- /.db-card -->
+    </div><!-- /.db-shell -->
+
+    <!-- Edit Quote Modal -->
+    <div id="editQuoteModal" class="modal-overlay" aria-hidden="true">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="editQuoteModalTitle">
+        <button class="modal-close" aria-label="Close">&times;</button>
+        <h2 id="editQuoteModalTitle">Edit Passage</h2>
+        <p id="eqmBookLabel" style="font-size:0.85rem;color:#64748B;margin:-6px 0 16px;"></p>
+        <form method="POST" id="editQuoteForm" action="" class="rating-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-group">
+                <label>Passage</label>
+                <textarea name="text" id="eqmText" class="qm-textarea" maxlength="2000" required></textarea>
+            </div>
+            <div class="form-group">
+                <label>Page Reference <span style="font-weight:400;color:#94A3B8;">(optional)</span></label>
+                <input type="text" name="page_ref" id="eqmPageRef" placeholder="e.g. p. 142" maxlength="20">
+            </div>
+            <div style="display:flex; gap:10px; margin-top:12px;">
+                <button type="submit" class="btn-primary">Save Changes</button>
+            </div>
+        </form>
+      </div>
+    </div>
+
+    <script>
+    (function(){
+        function closeOverlay(overlay){
+            if(!overlay) return;
+            overlay.classList.remove('visible');
+            overlay.setAttribute('aria-hidden','true');
+            document.body.style.overflow='';
+        }
+        document.addEventListener('click', function(e){
+            var editBtn = e.target.closest('.qt-edit-btn');
+            if(editBtn){
+                var q = JSON.parse(editBtn.getAttribute('data-quote'));
+                var overlay = document.getElementById('editQuoteModal');
+                overlay.classList.add('visible');
+                overlay.setAttribute('aria-hidden','false');
+                document.body.style.overflow='hidden';
+                document.getElementById('eqmText').value = q.text;
+                document.getElementById('eqmPageRef').value = q.page_ref || '';
+                document.getElementById('eqmBookLabel').textContent = q.book_title + ' \u00b7 ' + q.author;
+                document.getElementById('editQuoteForm').action = '/quotes/' + q.id + '/edit';
+                return;
+            }
+            if(e.target.closest('.modal-close')){ closeOverlay(e.target.closest('.modal-overlay')); return; }
+            if(e.target.classList.contains('modal-overlay') && e.target.classList.contains('visible')){ closeOverlay(e.target); }
+        });
+        document.addEventListener('keydown', function(e){
+            if(e.key==='Escape') document.querySelectorAll('.modal-overlay.visible').forEach(function(m){ closeOverlay(m); });
+        });
+    })();
+    </script>
+</body>
+</html>
