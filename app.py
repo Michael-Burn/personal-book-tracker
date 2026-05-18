@@ -83,7 +83,7 @@ class User(db.Model, UserMixin):
     plan             = db.Column(db.String(20), default='free', nullable=False)
     stripe_customer_id = db.Column(db.String(120), nullable=True)
     created_at       = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    avatar               = db.Column(db.String(120), nullable=True)
+    avatar               = db.Column(db.Text, nullable=True)
     is_active            = db.Column(db.Boolean, default=True, nullable=False)
     security_question    = db.Column(db.String(200), nullable=True)
     security_answer_hash = db.Column(db.String(256), nullable=True)
@@ -350,20 +350,9 @@ def upload_avatar():
         flash('Could not process image. Please upload a valid JPEG, PNG, GIF, or WEBP.', 'avatar_error')
         return redirect(url_for('authors_page'))
 
-    avatars_dir = os.path.join(app.root_path, 'static', 'avatars')
-    os.makedirs(avatars_dir, exist_ok=True)
-
-    # Remove any previously stored avatar for this user
-    if current_user.avatar:
-        old_path = os.path.join(avatars_dir, current_user.avatar)
-        if os.path.isfile(old_path):
-            os.remove(old_path)
-
-    filename = f'{current_user.id}.{ext}'
-    with open(os.path.join(avatars_dir, filename), 'wb') as fh:
-        fh.write(data)
-
-    current_user.avatar = filename
+    import base64
+    mime_map = {'JPEG': 'image/jpeg', 'PNG': 'image/png', 'GIF': 'image/gif', 'WEBP': 'image/webp'}
+    current_user.avatar = f'data:{mime_map[fmt]};base64,{base64.b64encode(data).decode()}'
     db.session.commit()
     return redirect(url_for('authors_page'))
 
@@ -980,7 +969,7 @@ def _repair_db():
                 ))
                 conn.execute(sa.text(
                     'ALTER TABLE "user" '
-                    'ADD COLUMN IF NOT EXISTS avatar VARCHAR(120), '
+                    'ADD COLUMN IF NOT EXISTS avatar TEXT, '
                     'ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE, '
                     'ADD COLUMN IF NOT EXISTS security_question VARCHAR(200), '
                     'ADD COLUMN IF NOT EXISTS security_answer_hash VARCHAR(256)'
