@@ -17,8 +17,12 @@ depends_on = None
 
 
 def upgrade():
-    with op.batch_alter_table('user', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('is_active', sa.Boolean(), nullable=False, server_default=sa.true()))
+    bind = op.get_bind()
+    insp = sa.inspect(bind)
+    cols = {c['name'] for c in insp.get_columns('user')}
+    if 'is_active' not in cols:
+        with op.batch_alter_table('user', schema=None) as batch_op:
+            batch_op.add_column(sa.Column('is_active', sa.Boolean(), nullable=False, server_default=sa.true()))
 
 
 def downgrade():

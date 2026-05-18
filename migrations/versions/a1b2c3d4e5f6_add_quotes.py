@@ -17,18 +17,21 @@ depends_on = None
 
 
 def upgrade():
-    op.create_table(
-        'quote',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('text', sa.String(length=2000), nullable=False),
-        sa.Column('page_ref', sa.String(length=20), nullable=True),
-        sa.Column('book_id', sa.Integer(), nullable=False),
-        sa.Column('user_id', sa.Integer(), nullable=False),
-        sa.Column('date_added', sa.DateTime(), nullable=False),
-        sa.ForeignKeyConstraint(['book_id'], ['book.id'], ),
-        sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
-        sa.PrimaryKeyConstraint('id'),
-    )
+    bind = op.get_bind()
+    insp = sa.inspect(bind)
+    if 'quote' not in insp.get_table_names():
+        op.create_table(
+            'quote',
+            sa.Column('id', sa.Integer(), nullable=False),
+            sa.Column('text', sa.String(length=2000), nullable=False),
+            sa.Column('page_ref', sa.String(length=20), nullable=True),
+            sa.Column('book_id', sa.Integer(), nullable=False),
+            sa.Column('user_id', sa.Integer(), nullable=False),
+            sa.Column('date_added', sa.DateTime(), nullable=False),
+            sa.ForeignKeyConstraint(['book_id'], ['book.id']),
+            sa.ForeignKeyConstraint(['user_id'], ['user.id']),
+            sa.PrimaryKeyConstraint('id'),
+        )
 
 
 def downgrade():
