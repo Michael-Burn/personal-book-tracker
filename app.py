@@ -18,6 +18,7 @@ from flask import Flask, render_template, request, redirect, url_for, abort, sen
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
+import sqlalchemy as sa
 from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect
 from flask_talisman import Talisman
@@ -868,6 +869,41 @@ def admin_delete_user(user_id):
     return redirect(url_for('admin_users'))
 
 
+def _repair_db():
+    """Add any columns missing from pre-migration production databases.
+    Uses PostgreSQL's ADD COLUMN IF NOT EXISTS — completely safe to re-run."""
+    with app.app_context():
+        if not db.engine.url.drivername.startswith('postgresql'):
+            return  # SQLite local dev: migrations handle this
+        try:
+            with db.engine.begin() as conn:
+                conn.execute(sa.text(
+                    'ALTER TABLE book '
+                    'ADD COLUMN IF NOT EXISTS user_id INTEGER, '
+                    'ADD COLUMN IF NOT EXISTS date_added TIMESTAMP'
+                ))
+                conn.execute(sa.text(
+                    'ALTER TABLE "user" '
+                    'ADD COLUMN IF NOT EXISTS avatar VARCHAR(120), '
+                    'ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE, '
+                    'ADD COLUMN IF NOT EXISTS security_question VARCHAR(200), '
+                    'ADD COLUMN IF NOT EXISTS security_answer_hash VARCHAR(256)'
+                ))
+                conn.execute(sa.text('''
+                    CREATE TABLE IF NOT EXISTS quote (
+                        id SERIAL PRIMARY KEY,
+                        text VARCHAR(2000) NOT NULL,
+                        page_ref VARCHAR(20),
+                        book_id INTEGER NOT NULL REFERENCES book(id),
+                        user_id INTEGER NOT NULL REFERENCES "user"(id),
+                        date_added TIMESTAMP NOT NULL
+                    )
+                '''))
+            print('[REPAIR] DB schema repair completed.', flush=True)
+        except Exception as exc:
+            print(f'[REPAIR] DB schema repair error: {exc}', flush=True)
+
+
 def _seed_admin_if_needed():
     """Create the Admin account on first deploy; assign orphaned books to Kwalitec.
     Runs once at startup — safe to leave in place, no-ops when already done."""
@@ -905,6 +941,7 @@ def _seed_admin_if_needed():
             print(f'[SEED] Skipped (DB not ready yet?): {exc}', flush=True)
 
 
+_repair_db()
 _seed_admin_if_needed()
 
 
