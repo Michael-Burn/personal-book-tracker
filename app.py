@@ -455,43 +455,29 @@ def top_books(user_id, since=None, limit=5):
 # ─── PNG Share Card Generation ───────────────────────────────
 
 def generate_share_card(username, items, list_type, period_label):
-    """Build and return a premium 1080x1920 portrait PNG share card (WhatsApp Status / Instagram Stories)."""
+    """Build and return a 1080x1920 portrait PNG share card matching the app's colour scheme."""
     W, H = 1080, 1920
 
-    # ── Palette ───────────────────────────────────────────────────────────
-    PURPLE  = (108,  99, 255)
-    EMERALD = ( 52, 211, 153)
+    # ── App colour palette (mirrors CSS variables) ────────────────────────
+    PRIMARY = (108,  99, 255)   # --color-primary  #6C63FF
+    ACCENT  = ( 34, 197,  94)   # --color-accent   #22C55E
+    RATING  = (246, 200,  95)   # --color-rating   #F6C85F
+    TEXT1   = ( 17,  24,  39)   # --color-text-primary  #111827
+    TEXT2   = (107, 114, 128)   # --color-text-secondary #6B7280
+    BORDER  = (229, 231, 235)   # --color-border   #E5E7EB
+    BG      = (248, 250, 252)   # --color-bg       #F8FAFC
     WHITE   = (255, 255, 255)
-    MUTED   = (162, 158, 208)
 
-    list_col = EMERALD if list_type == 'Books' else PURPLE
+    badge_col = ACCENT if list_type == 'Books' else PRIMARY
 
-    # ── Background gradient ───────────────────────────────────────────────
-    img  = Image.new('RGBA', (W, H))
-    draw = ImageDraw.Draw(img)
-    for y in range(H):
-        t = y / (H - 1)
-        draw.rectangle(
-            [(0, y), (W, y + 1)],
-            fill=(int(10 + 10 * t), int(11 + 5 * t), int(24 + 18 * t), 255),
-        )
-
-    # ── Glow: top-right (always purple) ───────────────────────────────────
-    g1 = Image.new('RGBA', (W, H), (0, 0, 0, 0))
-    ImageDraw.Draw(g1).ellipse([(W - 500, -260), (W + 150, 520)], fill=(*PURPLE, 90))
-    img.alpha_composite(g1.filter(ImageFilter.GaussianBlur(120)))
-
-    # ── Glow: bottom-left (list colour) ───────────────────────────────────
-    g2 = Image.new('RGBA', (W, H), (0, 0, 0, 0))
-    ImageDraw.Draw(g2).ellipse([(-200, H - 520), (420, H + 210)], fill=(*list_col, 70))
-    img.alpha_composite(g2.filter(ImageFilter.GaussianBlur(110)))
-
+    # ── Background ────────────────────────────────────────────────────────
+    img  = Image.new('RGB', (W, H), BG)
     draw = ImageDraw.Draw(img)
 
-    # ── Top accent bar ─────────────────────────────────────────────────────
-    draw.rectangle([(0, 0), (W, 6)], fill=(*list_col, 255))
+    # ── Top accent bar ────────────────────────────────────────────────────
+    draw.rectangle([(0, 0), (W, 8)], fill=PRIMARY)
 
-    # ── Font loader ────────────────────────────────────────────────────────
+    # ── Font loader ───────────────────────────────────────────────────────
     BOLD = [
         '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
         '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf',
@@ -518,21 +504,21 @@ def generate_share_card(username, items, list_type, period_label):
 
     fn_username = _font(BOLD, 72)
     fn_listtype = _font(BOLD, 50)
-    fn_period   = _font(REGU, 22)
-    fn_rank     = _font(BOLD, 36)
-    fn_meta     = _font(REGU, 24)
-    fn_badge    = _font(BOLD, 18)
-    fn_brand    = _font(BOLD, 24)
-    fn_footer   = _font(REGU, 18)
-    fn_cta      = _font(REGU, 20)
+    fn_period   = _font(REGU, 26)
+    fn_rank     = _font(BOLD, 38)
+    fn_meta     = _font(REGU, 26)
+    fn_badge    = _font(BOLD, 22)
+    fn_brand    = _font(BOLD, 26)
+    fn_footer   = _font(REGU, 20)
+    fn_cta      = _font(REGU, 22)
 
-    # ── Header ─────────────────────────────────────────────────────────────
-    draw.text((60,  52), f"{username}'s",                 fill=WHITE,          font=fn_username)
-    draw.text((62, 158), f"Top {len(items)} {list_type}", fill=WHITE,          font=fn_listtype)
-    draw.text((62, 230), period_label,                    fill=(*MUTED, 180),  font=fn_period)
-    draw.rectangle([(60, 285), (W - 60, 289)],            fill=(*list_col, 200))
+    # ── Header ────────────────────────────────────────────────────────────
+    draw.text((60,  52), f"{username}'s",                 fill=TEXT1,   font=fn_username)
+    draw.text((62, 158), f"Top {len(items)} {list_type}", fill=PRIMARY, font=fn_listtype)
+    draw.text((62, 232), period_label,                    fill=TEXT2,   font=fn_period)
+    draw.rectangle([(60, 295), (W - 60, 297)],            fill=BORDER)
 
-    # ── Star polygon helper ────────────────────────────────────────────────
+    # ── Star polygon helper ───────────────────────────────────────────────
     def _star_pts(cx, cy, outer_r, inner_r):
         pts = []
         for k in range(10):
@@ -541,21 +527,18 @@ def generate_share_card(username, items, list_type, period_label):
             pts.append((cx + r * math.cos(angle), cy + r * math.sin(angle)))
         return pts
 
-    # ── Ranked rows ────────────────────────────────────────────────────────
-    ROW_Y0 = 310
-    ROW_H  = (H - ROW_Y0 - 260) // max(len(items), 1)
+    # ── Ranked rows ───────────────────────────────────────────────────────
+    ROW_Y0 = 320
+    ROW_H  = (H - ROW_Y0 - 220) // max(len(items), 1)
 
     for i, item in enumerate(items, 1):
         ry = ROW_Y0 + (i - 1) * ROW_H
 
-        # Ghost rank numeral (decorative depth)
-        draw.text((52, ry + 18), str(i), fill=(*WHITE, 8), font=fn_username)
-
-        # Badge circle
-        draw.ellipse([(60, ry + 107), (116, ry + 163)], fill=(*list_col, 255))
+        # Badge circle (single rank indicator — no duplicate numeral)
+        draw.ellipse([(60, ry + 80), (122, ry + 142)], fill=badge_col)
         num_str = str(i)
         nw = int(draw.textlength(num_str, font=fn_badge))
-        draw.text((60 + (56 - nw) // 2, ry + 125), num_str, fill=WHITE, font=fn_badge)
+        draw.text((60 + (62 - nw) // 2, ry + 101), num_str, fill=WHITE, font=fn_badge)
 
         # Text content
         if list_type == 'Authors':
@@ -567,44 +550,45 @@ def generate_share_card(username, items, list_type, period_label):
             sub   = f"by {item['author'][:42]}"
             score = str(item['rating'])
 
-        draw.text((134, ry + 96),  line1, fill=WHITE, font=fn_rank)
-        draw.text((134, ry + 152), sub,   fill=MUTED,  font=fn_meta)
+        draw.text((144, ry + 76),  line1, fill=TEXT1, font=fn_rank)
+        draw.text((144, ry + 132), sub,   fill=TEXT2, font=fn_meta)
 
-        # Right-aligned rating: score number + drawn star polygon
+        # Right-aligned rating: score number + gold drawn star
         score_w = int(draw.textlength(score, font=fn_rank))
-        star_r  = 14
-        total_w = score_w + 10 + star_r * 2
+        star_r  = 16
+        total_w = score_w + 12 + star_r * 2
         rx0     = W - 60 - total_w
-        draw.text((rx0, ry + 96), score, fill=(*list_col, 230), font=fn_rank)
-        star_cx = rx0 + score_w + 10 + star_r
-        star_cy = ry + 96 + 18
-        draw.polygon(_star_pts(star_cx, star_cy, star_r, 6), fill=(*list_col, 230))
+        draw.text((rx0, ry + 76), score, fill=TEXT1, font=fn_rank)
+        star_cx = rx0 + score_w + 12 + star_r
+        star_cy = ry + 76 + 21
+        draw.polygon(_star_pts(star_cx, star_cy, star_r, 7), fill=RATING)
 
         # Row separator
         if i < len(items):
             draw.rectangle(
-                [(130, ry + ROW_H - 1), (W - 60, ry + ROW_H)],
-                fill=(*WHITE, 15),
+                [(60, ry + ROW_H - 1), (W - 60, ry + ROW_H)],
+                fill=BORDER,
             )
 
-    # ── Footer ─────────────────────────────────────────────────────────────
-    FY = H - 260
-    draw.rectangle([(0, FY), (W, FY + 1)], fill=(*WHITE, 20))
+    # ── Footer ────────────────────────────────────────────────────────────
+    FY = H - 220
+    draw.rectangle([(0, FY), (W, FY + 1)], fill=BORDER)
+    draw.rectangle([(0, FY + 1), (W, H)],  fill=WHITE)
     draw.text((60, FY + 40), 'Kwalitec Library',
-              fill=WHITE, font=fn_brand)
+              fill=PRIMARY, font=fn_brand)
     draw.text((60, FY + 82), 'https://personal-book-tracker-8xij.onrender.com/login',
-              fill=(*MUTED, 150), font=fn_footer)
+              fill=TEXT2, font=fn_footer)
     cta   = 'Track Your Reading'
     cta_w = int(draw.textlength(cta, font=fn_cta))
     draw.rounded_rectangle(
-        [(W - cta_w - 80, FY + 36), (W - 60, FY + 72)],
-        radius=14, fill=(*list_col, 255),
+        [(W - cta_w - 80, FY + 36), (W - 60, FY + 76)],
+        radius=14, fill=PRIMARY,
     )
-    draw.text((W - cta_w - 60, FY + 44), cta, fill=WHITE, font=fn_cta)
+    draw.text((W - cta_w - 60, FY + 46), cta, fill=WHITE, font=fn_cta)
 
-    # ── Export ─────────────────────────────────────────────────────────────
+    # ── Export ────────────────────────────────────────────────────────────
     buf = io.BytesIO()
-    img.convert('RGB').save(buf, format='PNG')
+    img.save(buf, format='PNG')
     buf.seek(0)
     return buf
 
