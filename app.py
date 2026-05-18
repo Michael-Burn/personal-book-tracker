@@ -813,11 +813,14 @@ def admin_users():
         key=lambda x: (-x['avg_rating'], -x['count'])
     )[:5]
 
+    orphaned_count = Book.query.filter_by(user_id=None).count()
+
     flash_errors   = get_flashed_messages(category_filter=['admin_error'])
     flash_messages = get_flashed_messages(category_filter=['admin_success'])
     return render_template(
         'admin_users.html',
         users=users,
+        non_admin=non_admin,
         total_users=total_users,
         active_users=active_users,
         disabled_users=disabled_users,
@@ -831,9 +834,26 @@ def admin_users():
         users_books_js=users_books_js,
         top_authors_global=top_authors_global,
         top_books_global=top_books_global,
+        orphaned_count=orphaned_count,
         flash_errors=flash_errors,
         flash_messages=flash_messages,
     )
+
+
+@app.route('/admin/assign-orphaned', methods=['POST'])
+@admin_required
+def admin_assign_orphaned():
+    user_id = request.form.get('user_id', type=int)
+    if not user_id:
+        flash('Please select a user.', 'admin_error')
+        return redirect(url_for('admin_users'))
+    owner = User.query.get_or_404(user_id)
+    orphaned = Book.query.filter_by(user_id=None).all()
+    for b in orphaned:
+        b.user_id = owner.id
+    db.session.commit()
+    flash(f'Assigned {len(orphaned)} orphaned book(s) to "{owner.username}".', 'admin_success')
+    return redirect(url_for('admin_users'))
 
 
 @app.route('/admin/users/<int:user_id>/toggle-active', methods=['POST'])
