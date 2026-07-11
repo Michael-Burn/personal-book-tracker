@@ -21,8 +21,8 @@
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                 <div class="form-group">
-                    <label>Username</label>
-                    <input type="text" name="username" autocomplete="username"
+                    <label for="regUsername">Username</label>
+                    <input id="regUsername" type="text" name="username" autocomplete="username"
                            pattern="[A-Za-z0-9_]{3,30}"
                            title="3–30 characters: letters, numbers, underscores"
                            placeholder="e.g. Alice, Bob42, or book_lover"
@@ -30,18 +30,18 @@
                     <div class="field-hint">Letters, numbers, and underscores · 3–30 characters</div>
                 </div>
                 <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" name="password" autocomplete="new-password" minlength="8" required>
+                    <label for="regPassword">Password</label>
+                    <input id="regPassword" type="password" name="password" autocomplete="new-password" minlength="8" required>
                     <div class="field-hint">At least 8 characters</div>
                 </div>
                 <div class="form-group">
-                    <label>Confirm Password</label>
-                    <input type="password" name="confirm" autocomplete="new-password" required>
+                    <label for="regConfirm">Confirm Password</label>
+                    <input id="regConfirm" type="password" name="confirm" autocomplete="new-password" required>
                 </div>
 
                 <div class="form-group">
-                    <label>Security Question</label>
-                    <select name="security_question" required>
+                    <label for="regSecurityQ">Security Question</label>
+                    <select id="regSecurityQ" name="security_question" required>
                         <option value="" disabled selected>— choose a question —</option>
                         {% for q in security_questions %}
                         <option value="{{ q }}">{{ q }}</option>
@@ -50,8 +50,8 @@
                     <div class="field-hint">Used to recover your account if you forget your password.</div>
                 </div>
                 <div class="form-group">
-                    <label>Your Answer</label>
-                    <input type="text" name="security_answer" autocomplete="off"
+                    <label for="regSecurityA">Your Answer</label>
+                    <input id="regSecurityA" type="text" name="security_answer" autocomplete="off"
                            placeholder="Not case-sensitive" required minlength="2">
                 </div>
 

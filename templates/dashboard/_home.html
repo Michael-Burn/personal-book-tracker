@@ -1,0 +1,245 @@
+{# Home — hero, continue reading, quick actions, goal, finished, snapshot #}
+
+<!-- ── Personalized Hero ──────────────────────── -->
+<section class="home-hero home-hero--{{ home_hero.scenario }}" aria-label="Your reading journey">
+    <div class="home-hero-body">
+        <p class="home-hero-eyebrow">{{ home_hero.eyebrow }}</p>
+        <h2 class="home-hero-title">{{ home_hero.title }}</h2>
+        <p class="home-hero-msg">{{ home_hero.message }}</p>
+        <div class="home-hero-actions">
+            {% if home_hero.cta_anchor == 'continue' and currently_reading %}
+            <a href="{{ url_for('edit', id=currently_reading[0].book.id) }}" class="home-hero-cta">{{ home_hero.cta_label }}</a>
+            <a href="#continue-reading" class="home-hero-cta home-hero-cta--ghost">View shelf</a>
+            {% elif home_hero.cta_anchor == 'goal' %}
+            <a href="#reading-goal" class="home-hero-cta">{{ home_hero.cta_label }}</a>
+            {% elif home_hero.cta_anchor == 'reading_year' %}
+            <a href="{{ url_for('reading_year_page') }}" class="home-hero-cta">{{ home_hero.cta_label }}</a>
+            {% else %}
+            <a href="{{ url_for('add') }}?next={{ url_for('authors_page', view='home') }}" class="home-hero-cta open-add-modal">{{ home_hero.cta_label }}</a>
+            {% endif %}
+        </div>
+    </div>
+    {% if home_hero.book %}
+    <div class="home-hero-cover" aria-hidden="true">
+        {% set cover_filename = home_hero.book.cover_filename %}
+        {% set title = home_hero.book.title %}
+        {% set thumb_class = 'book-cover-thumb--hero' %}
+        {% set svg_size = 42 %}
+        {% set alt = home_hero.book.title %}
+        {% include 'components/cover_image.html' %}
+    </div>
+    {% endif %}
+</section>
+
+<!-- ── Continue Reading ───────────────────────── -->
+<section id="continue-reading" class="home-continue" aria-label="Continue reading">
+    <div class="home-section-head">
+        <h2 class="rs-section-title">Continue Reading</h2>
+        {% if currently_reading %}
+        <span class="home-section-count">{{ currently_reading|length }} in progress</span>
+        {% endif %}
+    </div>
+    {% if currently_reading %}
+    <div id="homeContinueSkel" class="home-continue-skel" aria-hidden="true">
+        {% for _ in range([currently_reading|length, 3]|min) %}
+        <div class="skel-row">
+            <div class="skel skel-cover" style="width:56px;aspect-ratio:2/3;margin:0"></div>
+            <div class="skel-row-text">
+                <div class="skel skel-line"></div>
+                <div class="skel skel-line skel-line--sm"></div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <ul class="home-continue-list" id="homeContinueList" hidden>
+        {% for item in currently_reading %}
+        <li class="home-continue-card">
+            {% set cover_filename = item.book.cover_filename %}
+            {% set title = item.book.title %}
+            {% set thumb_class = 'book-cover-thumb--continue' %}
+            {% set svg_size = 28 %}
+            {% set alt = item.book.title %}
+            {% include 'components/cover_image.html' %}
+            <div class="home-continue-main">
+                <h3 class="home-continue-title">{{ item.book.title }}</h3>
+                <p class="home-continue-author">{{ item.book.author }}</p>
+                <div class="home-continue-meta">
+                    {% if item.elapsed_days %}
+                    <span class="home-continue-days">{{ item.elapsed_days }} day{{ 's' if item.elapsed_days != 1 else '' }} reading</span>
+                    {% endif %}
+                    {% if item.started_reading_at %}
+                    <span class="home-continue-started">Started {{ item.started_reading_at.strftime('%b %d, %Y') }}</span>
+                    {% else %}
+                    <span class="home-continue-started home-continue-started--muted">Add a start date to track days</span>
+                    {% endif %}
+                </div>
+            </div>
+            <a href="{{ url_for('edit', id=item.book.id) }}" class="home-continue-btn">Continue</a>
+        </li>
+        {% endfor %}
+    </ul>
+    <script>
+    (function(){
+        var skel = document.getElementById('homeContinueSkel');
+        var list = document.getElementById('homeContinueList');
+        if(skel) skel.remove();
+        if(list) list.hidden = false;
+    })();
+    </script>
+    {% else %}
+    <div class="home-empty home-empty--continue">
+        <p class="home-empty-title">{% if is_empty %}Add your first book.{% else %}No book in progress right now.{% endif %}</p>
+        <p class="home-empty-sub">{% if is_empty %}Add a title and mark it Currently Reading — this space will keep your place.{% else %}Open your Want to Read list, or add something new and set the status to Currently Reading.{% endif %}</p>
+        <a href="{{ url_for('add') }}?next={{ url_for('authors_page', view='home') }}" class="home-empty-cta open-add-modal">Add a book</a>
+    </div>
+    {% endif %}
+</section>
+
+<!-- ── Quick Actions ──────────────────────────── -->
+<nav class="home-actions" aria-label="Quick actions">
+    <a href="{{ url_for('add') }}?next={{ url_for('authors_page', view='home') }}" class="home-action open-add-modal">
+        <span class="home-action-ico" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </span>
+        <span class="home-action-lbl">Add Book</span>
+    </a>
+    {% if currently_reading %}
+    <a href="#continue-reading" class="home-action">
+        <span class="home-action-ico" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        </span>
+        <span class="home-action-lbl">Continue Reading</span>
+    </a>
+    {% else %}
+    <a href="{{ url_for('add') }}?next={{ url_for('authors_page', view='home') }}" class="home-action open-add-modal">
+        <span class="home-action-ico" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        </span>
+        <span class="home-action-lbl">Start Reading</span>
+    </a>
+    {% endif %}
+    <a href="{{ url_for('reading_year_page') }}" class="home-action">
+        <span class="home-action-ico" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </span>
+        <span class="home-action-lbl">My Reading Year</span>
+    </a>
+    <a href="#reading-goal" class="home-action">
+        <span class="home-action-ico" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+        </span>
+        <span class="home-action-lbl">Reading Goal</span>
+    </a>
+</nav>
+
+<!-- ── Annual Reading Goal ────────────────────── -->
+<section id="reading-goal" class="rs-goal" aria-label="{{ reading_goal.year }} reading goal">
+    <h2 class="rs-section-title rs-goal-title">{{ reading_goal.year }} Reading Goal</h2>
+
+    {% if reading_goal.exists %}
+    <div class="rs-goal-card">
+        <div class="rs-goal-top">
+            <div class="rs-goal-stats">
+                <span class="rs-goal-progress-text">
+                    <strong>{{ reading_goal.completed }}</strong> of <strong>{{ reading_goal.target }}</strong> books
+                </span>
+                <span class="rs-goal-pct">{{ reading_goal.percent }}%</span>
+            </div>
+            {% if reading_goal.pace_label %}
+            <span class="rs-goal-pace {% if reading_goal.goal_met %}rs-goal-pace--met{% elif reading_goal.on_pace %}rs-goal-pace--on{% else %}rs-goal-pace--behind{% endif %}">
+                {{ reading_goal.pace_label }}
+            </span>
+            {% endif %}
+        </div>
+        <div class="rs-goal-bar" role="progressbar"
+             aria-valuemin="0" aria-valuemax="100"
+             aria-valuenow="{{ reading_goal.percent }}"
+             aria-label="{{ reading_goal.percent }} percent of goal">
+            <div class="rs-goal-fill {% if reading_goal.goal_met %}rs-goal-fill--met{% elif reading_goal.on_pace %}rs-goal-fill--on{% else %}rs-goal-fill--behind{% endif %}"
+                 style="width: {{ reading_goal.percent }}%;"></div>
+        </div>
+        {% if reading_goal.projection_label %}
+        <p class="rs-goal-projection">{{ reading_goal.projection_label }}</p>
+        {% endif %}
+        <form class="rs-goal-form rs-goal-form--edit" action="{{ url_for('set_reading_goal') }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <label class="rs-goal-label" for="goalTargetEdit">Update goal</label>
+            <div class="rs-goal-form-row">
+                <input type="number" id="goalTargetEdit" name="target_count"
+                       class="rs-goal-input" min="1" max="500" required
+                       value="{{ reading_goal.target }}"
+                       aria-label="Books to finish this year">
+                <button type="submit" class="rs-goal-btn">Save</button>
+            </div>
+        </form>
+        {% with msgs = get_flashed_messages(category_filter=['goal_error']) %}
+        {% if msgs %}<p class="rs-goal-err">{{ msgs[0] }}</p>{% endif %}
+        {% endwith %}
+        {% with msgs = get_flashed_messages(category_filter=['goal_success']) %}
+        {% if msgs %}<p class="rs-goal-ok">{{ msgs[0] }}</p>{% endif %}
+        {% endwith %}
+    </div>
+    {% else %}
+    <div class="rs-goal-empty">
+        <p class="rs-goal-empty-title">Set a goal for this year.</p>
+        <p class="rs-goal-empty-sub">
+            Choose how many books you want to finish in {{ reading_goal.year }}.
+            You've logged {{ reading_goal.completed }} with finish dates so far — a goal makes the rest of the year feel intentional.
+        </p>
+        <form class="rs-goal-form" action="{{ url_for('set_reading_goal') }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <label class="rs-goal-label" for="goalTargetNew">Books to finish</label>
+            <div class="rs-goal-form-row">
+                <input type="number" id="goalTargetNew" name="target_count"
+                       class="rs-goal-input" min="1" max="500" required
+                       placeholder="e.g. 24" aria-label="Books to finish this year">
+                <button type="submit" class="rs-goal-btn">Set goal</button>
+            </div>
+        </form>
+        {% with msgs = get_flashed_messages(category_filter=['goal_error']) %}
+        {% if msgs %}<p class="rs-goal-err">{{ msgs[0] }}</p>{% endif %}
+        {% endwith %}
+    </div>
+    {% endif %}
+</section>
+
+<!-- ── Recently Finished ──────────────────────── -->
+<section class="home-finished" aria-label="Recently finished">
+    <div class="home-section-head">
+        <h2 class="rs-section-title">Recently Finished</h2>
+    </div>
+    {% if recently_finished %}
+    <ul class="home-finished-list">
+        {% for item in recently_finished %}
+        <li class="home-finished-card">
+            <a href="{{ url_for('edit', id=item.book.id) }}" class="home-finished-link">
+                {% set cover_filename = item.book.cover_filename %}
+                {% set title = item.book.title %}
+                {% set thumb_class = 'book-cover-thumb--finished' %}
+                {% set svg_size = 22 %}
+                {% set alt = item.book.title %}
+                {% include 'components/cover_image.html' %}
+                <div class="home-finished-main">
+                    <span class="home-finished-title">{{ item.book.title }}</span>
+                    <span class="home-finished-author">{{ item.book.author }}</span>
+                    <span class="home-finished-date">{% if item.finished_reading_at %}Finished {{ item.finished_reading_at.strftime('%b %d, %Y') }}{% else %}Finished{% endif %}</span>
+                </div>
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <div class="home-empty home-empty--finished">
+        <p class="home-empty-title">{% if is_empty %}Finished books will gather here.{% else %}No recent finishes with dates yet.{% endif %}</p>
+        <p class="home-empty-sub">{% if is_empty %}When you close a book, add a finish date — your timeline becomes a reading history.{% else %}Mark a book Finished and set its finish date to build this shelf from your timeline.{% endif %}</p>
+    </div>
+    {% endif %}
+</section>
+
+{% if reading_snapshot %}
+<!-- ── Reading Snapshot ───────────────────────── -->
+<aside class="home-snapshot" aria-label="Reading snapshot">
+    <span class="home-snapshot-label">{{ reading_snapshot.label }}</span>
+    <p class="home-snapshot-text">{{ reading_snapshot.text }}</p>
+</aside>
+{% endif %}

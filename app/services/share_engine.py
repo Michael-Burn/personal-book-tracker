@@ -689,7 +689,7 @@ class ShareEngine:
         if not quote:
             draw.text(
                 (pad, int(h * 0.45)),
-                'Save a favourite line from a book\nand it may become your Quote of the Year.',
+                'Mark a passage ★ Favourite in Quotes\nto feature it as your Favourite Quote.',
                 fill=self.TEXT2,
                 font=fn_meta,
             )

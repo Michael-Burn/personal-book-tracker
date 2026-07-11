@@ -104,14 +104,18 @@
                     <span class="hub-insight-name">{{ a.name }}</span>
                     <span class="hub-insight-meta">{{ a.count }} book{{ 's' if a.count != 1 else '' }}</span>
                     <span class="hub-stars">
+                        {% if a.avg_rating %}
                         {% for _ in range(a.avg_rating | round | int) %}★{% endfor %}{% for _ in range(5 - (a.avg_rating | round | int)) %}☆{% endfor %}
                         <span class="hub-rating-num">{{ a.avg_rating }}</span>
+                        {% else %}
+                        <span class="hub-rating-num">Unrated</span>
+                        {% endif %}
                     </span>
                 </li>
                 {% endfor %}
             </ol>
             {% else %}
-            <p class="hub-empty">No books recorded yet.</p>
+            <p class="hub-empty">No books recorded yet. Rankings appear once readers rate their shelves.</p>
             {% endif %}
         </div>
 
@@ -130,14 +134,18 @@
                         <span class="hub-insight-author">{{ b.author }}</span>
                     </div>
                     <span class="hub-stars">
+                        {% if b.avg_rating %}
                         {% for _ in range(b.avg_rating | round | int) %}★{% endfor %}{% for _ in range(5 - (b.avg_rating | round | int)) %}☆{% endfor %}
                         <span class="hub-rating-num">{{ b.avg_rating }}</span>
+                        {% else %}
+                        <span class="hub-rating-num">Unrated</span>
+                        {% endif %}
                     </span>
                 </li>
                 {% endfor %}
             </ol>
             {% else %}
-            <p class="hub-empty">No books recorded yet.</p>
+            <p class="hub-empty">No books recorded yet. Rankings appear once readers rate their shelves.</p>
             {% endif %}
         </div>
     </div>
@@ -222,11 +230,9 @@
                     <tr class="admin-row{% if not user.is_active %} admin-row--disabled{% endif %}">
                         <td class="admin-td-name">
                             <div class="admin-avatar">
-                                {% if user.avatar %}
-                                <img src="{{ user.avatar }}" alt="{{ user.username[0]|upper }}">
-                                {% else %}
-                                <span>{{ user.username[0]|upper }}</span>
-                                {% endif %}
+                                {% with src=user.avatar, initial=user.username[0], img_class='', alt=user.username[0]|upper %}
+                                {% include 'components/avatar.html' %}
+                                {% endwith %}
                             </div>
                             <span class="admin-username"><a href="{{ url_for('admin_user_detail', user_id=user.id) }}">{{ user.username }}</a></span>
                             {% if user.id == current_user.id %}

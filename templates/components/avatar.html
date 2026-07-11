@@ -1,0 +1,14 @@
+{# Avatar with initials fallback.
+   Params:
+     src       — avatar data-URI / URL or None
+     initial   — single letter for fallback (required)
+     img_class — optional class on img (default avatar-img)
+     alt       — img alt text (default "Avatar")
+#}
+{% if src %}
+<img src="{{ src }}" class="{{ img_class|default('avatar-img') }}" alt="{{ alt|default('Avatar') }}"
+     onerror="this.style.display='none'; var i=this.nextElementSibling; if(i){ i.hidden=false; i.removeAttribute('hidden'); }">
+<span class="avatar-initials" hidden aria-hidden="true">{{ initial|upper }}</span>
+{% else %}
+<span class="avatar-initials" aria-hidden="true">{{ initial|upper }}</span>
+{% endif %}

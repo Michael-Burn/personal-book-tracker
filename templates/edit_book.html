@@ -80,7 +80,11 @@
                     <div class="cover-preview" id="coverPreview">
                         {% if book.cover_filename %}
                         <img id="coverPreviewImg" class="cover-preview-img" alt="Current cover"
-                             src="{{ url_for('serve_book_cover', filename=book.cover_filename) }}">
+                             src="{{ url_for('serve_book_cover', filename=book.cover_filename) }}"
+                             onerror="this.style.display='none'; var p=this.nextElementSibling; if(p){ p.hidden=false; p.removeAttribute('hidden'); }">
+                        <div class="book-cover-placeholder book-cover-placeholder--preview" id="coverPlaceholder" hidden aria-hidden="true">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                        </div>
                         {% else %}
                         <div class="book-cover-placeholder book-cover-placeholder--preview" id="coverPlaceholder">
                             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>

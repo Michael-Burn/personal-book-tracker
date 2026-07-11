@@ -150,12 +150,13 @@ class Book(db.Model):
     quotes         = db.relationship('Quote', backref='book', lazy=True, cascade='all, delete-orphan')
 
 class Quote(db.Model):
-    id         = db.Column(db.Integer, primary_key=True)
-    text       = db.Column(db.String(2000), nullable=False)
-    page_ref   = db.Column(db.String(20), nullable=True)
-    book_id    = db.Column(db.Integer, db.ForeignKey('book.id'), nullable=False)
-    user_id    = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    date_added = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    id           = db.Column(db.Integer, primary_key=True)
+    text         = db.Column(db.String(2000), nullable=False)
+    page_ref     = db.Column(db.String(20), nullable=True)
+    book_id      = db.Column(db.Integer, db.ForeignKey('book.id'), nullable=False)
+    user_id      = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    date_added   = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    is_favourite = db.Column(db.Boolean, nullable=False, default=False)
 
 
 class ReadingGoal(db.Model):
@@ -722,7 +723,7 @@ def _load_reading_year(user, year: int):
 @app.route('/reading-year/<int:year>')
 @login_required
 def reading_year_page(year=None):
-    """Narrative My Reading Year experience (Spotify Wrapped-style)."""
+    """My Reading Year report — scrollable year narrative from existing data."""
     if year is None:
         year = datetime.utcnow().year
     if year < 2000 or year > datetime.utcnow().year + 1:
@@ -793,8 +794,15 @@ def authors_page():
         is_empty=dash['is_empty'],
     )
 
+    # UI-only page focus within the existing /authors route (no new endpoints).
+    valid_views = frozenset({'home', 'library', 'analytics', 'authors'})
+    active_view = (request.args.get('view') or 'home').strip().lower()
+    if active_view not in valid_views:
+        active_view = 'home'
+
     return render_template(
         'index.html',
+        active_view=active_view,
         authors=dash['authors'],
         books=books,
         total_books=dash['total_books'],
@@ -1108,19 +1116,61 @@ def edit_quote(quote_id):
     return redirect(url_for('quotes_page'))
 
 
+@app.route('/quotes/<int:quote_id>/favourite', methods=['POST'])
+@login_required
+def favourite_quote(quote_id):
+    """Mark a quote as the user's single favourite (clears any previous)."""
+    quote = Quote.query.get_or_404(quote_id)
+    if quote.user_id != current_user.id:
+        abort(403)
+    # Clear previous favourite for this user, then set the new one.
+    Quote.query.filter_by(user_id=current_user.id, is_favourite=True).update(
+        {'is_favourite': False},
+        synchronize_session=False,
+    )
+    quote.is_favourite = True
+    db.session.commit()
+    next_url = request.form.get('next') or url_for('quotes_page')
+    if not (isinstance(next_url, str) and next_url.startswith('/')):
+        next_url = url_for('quotes_page')
+    return redirect(next_url)
+
+
+@app.route('/quotes/<int:quote_id>/unfavourite', methods=['POST'])
+@login_required
+def unfavourite_quote(quote_id):
+    quote = Quote.query.get_or_404(quote_id)
+    if quote.user_id != current_user.id:
+        abort(403)
+    quote.is_favourite = False
+    db.session.commit()
+    next_url = request.form.get('next') or url_for('quotes_page')
+    if not (isinstance(next_url, str) and next_url.startswith('/')):
+        next_url = url_for('quotes_page')
+    return redirect(next_url)
+
+
 @app.route('/api/quotes/random')
 @login_required
 def random_quote():
-    quotes = Quote.query.filter_by(user_id=current_user.id).all()
-    if not quotes:
-        return ('', 204)
-    q = random.choice(quotes)
+    """Return the favourite quote when set; otherwise a random passage."""
+    favourite = Quote.query.filter_by(
+        user_id=current_user.id, is_favourite=True
+    ).first()
+    if favourite:
+        q = favourite
+    else:
+        quotes = Quote.query.filter_by(user_id=current_user.id).all()
+        if not quotes:
+            return ('', 204)
+        q = random.choice(quotes)
     return jsonify({
         'id': q.id,
         'text': q.text,
         'page_ref': q.page_ref,
         'book_title': q.book.title,
         'author': q.book.author,
+        'is_favourite': bool(q.is_favourite),
     })
 
 
@@ -1406,9 +1456,14 @@ def _repair_db():
                         page_ref VARCHAR(20),
                         book_id INTEGER NOT NULL REFERENCES book(id),
                         user_id INTEGER NOT NULL REFERENCES "user"(id),
-                        date_added TIMESTAMP NOT NULL
+                        date_added TIMESTAMP NOT NULL,
+                        is_favourite BOOLEAN NOT NULL DEFAULT FALSE
                     )
                 '''))
+                conn.execute(sa.text(
+                    'ALTER TABLE quote '
+                    'ADD COLUMN IF NOT EXISTS is_favourite BOOLEAN NOT NULL DEFAULT FALSE'
+                ))
                 conn.execute(sa.text('''
                     CREATE TABLE IF NOT EXISTS reading_goal (
                         id SERIAL PRIMARY KEY,

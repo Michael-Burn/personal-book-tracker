@@ -23,11 +23,9 @@
     <div class="hub-profile-header">
         <div class="hub-profile-identity">
             <div class="admin-avatar admin-avatar--lg">
-                {% if profile_user.avatar %}
-                <img src="{{ profile_user.avatar }}" alt="{{ profile_user.username[0]|upper }}">
-                {% else %}
-                <span>{{ profile_user.username[0]|upper }}</span>
-                {% endif %}
+                {% with src=profile_user.avatar, initial=profile_user.username[0], img_class='', alt=profile_user.username[0]|upper %}
+                {% include 'components/avatar.html' %}
+                {% endwith %}
             </div>
             <div>
                 <p class="ab-eyebrow">User detail</p>

@@ -1,12 +1,19 @@
 {# Shared navigation.
-   Set nav_variant before include: dashboard | author | quotes | settings | admin
+   Set nav_variant before include: dashboard | author | quotes | settings | admin | reading_year
+   Optional: active_view for dashboard primary tabs (home|library|analytics|authors)
 #}
 {% if nav_variant == 'dashboard' %}
-<nav class="db-nav">
-    <a class="db-logo" href="{{ url_for('authors_page') }}">
+<nav class="db-nav" aria-label="Primary">
+    <a class="db-logo" href="{{ url_for('authors_page', view='home') }}">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
         <span>Book Tracker</span>
     </a>
+    <div class="db-primary-nav" role="navigation" aria-label="Main sections">
+        <a href="{{ url_for('authors_page', view='home') }}" class="db-primary-link{% if active_view == 'home' %} is-active{% endif %}">Home</a>
+        <a href="{{ url_for('authors_page', view='library') }}" class="db-primary-link{% if active_view == 'library' %} is-active{% endif %}">Library</a>
+        <a href="{{ url_for('authors_page', view='analytics') }}" class="db-primary-link{% if active_view == 'analytics' %} is-active{% endif %}">Analytics</a>
+        <a href="{{ url_for('authors_page', view='authors') }}" class="db-primary-link{% if active_view == 'authors' %} is-active{% endif %}">Authors</a>
+    </div>
     <div class="db-nav-actions">
         <a href="{{ url_for('reading_year_page') }}" class="db-nav-btn">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -16,8 +23,8 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
             Share
         </a>
-        <a href="{{ url_for('change_password') }}" class="db-nav-btn db-nav-btn--icon" title="Change Password">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+        <a href="{{ url_for('change_password') }}" class="db-nav-btn db-nav-btn--icon" title="Change Password" aria-label="Change Password">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
         </a>
         <a href="{{ url_for('quotes_page') }}" class="db-nav-btn">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -37,18 +44,28 @@
 </nav>
 
 {% elif nav_variant == 'reading_year' %}
-<nav class="db-nav ry-topnav">
-    <a class="db-logo" href="{{ url_for('authors_page') }}">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+<nav class="db-nav" aria-label="Primary">
+    <a class="db-logo" href="{{ url_for('authors_page', view='home') }}">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
         <span>Book Tracker</span>
     </a>
+    <div class="db-primary-nav" role="navigation" aria-label="Main sections">
+        <a href="{{ url_for('authors_page', view='home') }}" class="db-primary-link">Home</a>
+        <a href="{{ url_for('authors_page', view='library') }}" class="db-primary-link">Library</a>
+        <a href="{{ url_for('authors_page', view='analytics') }}" class="db-primary-link">Analytics</a>
+        <a href="{{ url_for('authors_page', view='authors') }}" class="db-primary-link">Authors</a>
+    </div>
     <div class="db-nav-actions">
-        <a href="{{ url_for('authors_page') }}" class="db-nav-btn">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-            Library
+        <a href="{{ url_for('reading_year_page') }}" class="db-nav-btn is-active" aria-current="page">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            My Year
+        </a>
+        <a href="{{ url_for('quotes_page') }}" class="db-nav-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Quotes
         </a>
         <a href="{{ url_for('logout') }}" class="db-nav-btn db-nav-btn--out">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             Sign Out
         </a>
     </div>
@@ -56,12 +73,12 @@
 
 {% elif nav_variant == 'author' %}
 <nav class="db-nav">
-    <a class="db-logo" href="{{ url_for('authors_page') }}">
+    <a class="db-logo" href="{{ url_for('authors_page', view='home') }}">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
         <span>Book Tracker</span>
     </a>
     <div class="db-nav-actions">
-        <a href="{{ url_for('authors_page') }}" class="db-nav-btn">
+        <a href="{{ url_for('authors_page', view='authors') }}" class="db-nav-btn">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
             Authors
         </a>
@@ -73,15 +90,25 @@
 </nav>
 
 {% elif nav_variant == 'quotes' %}
-<nav class="db-nav">
-    <a class="db-logo" href="{{ url_for('authors_page') }}">
+<nav class="db-nav" aria-label="Primary">
+    <a class="db-logo" href="{{ url_for('authors_page', view='home') }}">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
         <span>Book Tracker</span>
     </a>
+    <div class="db-primary-nav" role="navigation" aria-label="Main sections">
+        <a href="{{ url_for('authors_page', view='home') }}" class="db-primary-link">Home</a>
+        <a href="{{ url_for('authors_page', view='library') }}" class="db-primary-link">Library</a>
+        <a href="{{ url_for('authors_page', view='analytics') }}" class="db-primary-link">Analytics</a>
+        <a href="{{ url_for('authors_page', view='authors') }}" class="db-primary-link">Authors</a>
+    </div>
     <div class="db-nav-actions">
-        <a href="{{ url_for('authors_page') }}" class="db-nav-btn">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-            Library
+        <a href="{{ url_for('reading_year_page') }}" class="db-nav-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            My Year
+        </a>
+        <a href="{{ url_for('quotes_page') }}" class="db-nav-btn is-active" aria-current="page">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Quotes
         </a>
         <a href="{{ url_for('logout') }}" class="db-nav-btn db-nav-btn--out">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -92,7 +119,7 @@
 
 {% elif nav_variant == 'settings' %}
 <nav class="sett-nav">
-    <a href="{{ url_for('authors_page') }}" class="sett-nav-back">
+    <a href="{{ url_for('authors_page', view='home') }}" class="sett-nav-back">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         My Library
     </a>
@@ -115,11 +142,11 @@
     </div>
     <div class="hub-nav-actions">
         {% if admin_nav == 'dashboard' %}
-        <button type="button" class="hub-icon-btn" id="openUserMgmt" title="Manage Users" onclick="document.getElementById('userMgmtModal').classList.add('open')">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <button type="button" class="hub-icon-btn" id="openUserMgmt" title="Manage Users" aria-label="Manage Users" onclick="document.getElementById('userMgmtModal').classList.add('open')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         </button>
         {% endif %}
-        <a href="{{ url_for('authors_page') }}" class="hub-back">Library</a>
+        <a href="{{ url_for('authors_page', view='home') }}" class="hub-back">Library</a>
         <a href="{{ url_for('logout') }}" class="hub-back">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             Sign Out

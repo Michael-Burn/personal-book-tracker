@@ -69,7 +69,7 @@
             {% endwith %}
 
             <!-- ── Premium bookshelf ────────────────────────── -->
-            <div id="bookshelf" class="lib-shelf lib-shelf--grid" data-empty-author="{{ author }}">
+            <div id="bookshelf" class="lib-shelf lib-shelf--compact" data-empty-author="{{ author }}">
                 {% for book in books %}
                 {% with show_author=false %}
                 {% include 'components/book_card.html' %}
@@ -77,12 +77,23 @@
                 {% else %}
                 <div class="lib-empty">
                     <div class="db-empty-icon">
-                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
                     </div>
-                    <h3 class="db-empty-title">No books for this author yet</h3>
-                    <p class="db-empty-sub">Try adding a new rating for {{ author }}.</p>
+                    <h3 class="db-empty-title">No books for this author yet.</h3>
+                    <p class="db-empty-sub">Add a rating for {{ author }} to start this shelf.</p>
+                    <a href="{{ url_for('add') }}?next={{ request.path|urlencode }}" class="db-cta db-empty-cta open-add-modal">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Add a Book
+                    </a>
                 </div>
                 {% endfor %}
+            </div>
+            <div id="authorFilterEmpty" class="db-empty db-empty--inline" hidden role="status">
+                <div class="db-empty-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </div>
+                <h3 class="db-empty-title">No books with this status.</h3>
+                <p class="db-empty-sub">Try another filter, or clear Status to see every title by {{ author }}.</p>
             </div>
         </div><!-- /.db-card -->
     </div><!-- /.db-shell -->
@@ -265,24 +276,41 @@
 
         (function(){
             var filter = document.getElementById('bookStatusFilter');
+            var shelf = document.getElementById('bookshelf');
             var cards = document.querySelectorAll('#bookshelf .lib-card');
+            var emptyEl = document.getElementById('authorFilterEmpty');
+            function syncFilterEmpty(){
+                if(!emptyEl) return;
+                var visible = 0;
+                cards.forEach(function(card){ if(!card.hidden) visible++; });
+                emptyEl.hidden = visible > 0;
+                if(shelf) shelf.classList.toggle('lib-shelf--filtered-empty', visible === 0);
+            }
             if(!filter) return;
             filter.addEventListener('change', function(){
                 var status = filter.value;
                 cards.forEach(function(card){
                     card.hidden = !!(status && card.getAttribute('data-status') !== status);
                 });
+                syncFilterEmpty();
             });
         })();
 
         (function(){
-            var KEY = 'kwalitec-library-view';
+            var KEY = 'kwalitec-library-density';
+            var LEGACY = 'kwalitec-library-view';
             var shelf = document.getElementById('bookshelf');
             var toggle = document.getElementById('viewToggle');
             if(!shelf || !toggle) return;
+            function normalize(view){
+                if(view === 'large' || view === 'comfortable' || view === 'compact') return view;
+                if(view === 'grid') return 'comfortable';
+                if(view === 'list') return 'compact';
+                return 'compact';
+            }
             function apply(view){
-                view = view === 'list' ? 'list' : 'grid';
-                shelf.classList.remove('lib-shelf--grid', 'lib-shelf--list');
+                view = normalize(view);
+                shelf.classList.remove('lib-shelf--compact', 'lib-shelf--comfortable', 'lib-shelf--large', 'lib-shelf--grid', 'lib-shelf--list');
                 shelf.classList.add('lib-shelf--' + view);
                 toggle.querySelectorAll('.lib-view-btn').forEach(function(btn){
                     var on = btn.getAttribute('data-view') === view;
@@ -291,8 +319,10 @@
                 });
                 try { localStorage.setItem(KEY, view); } catch(e) {}
             }
-            var saved = 'grid';
-            try { saved = localStorage.getItem(KEY) || 'grid'; } catch(e) {}
+            var saved = 'compact';
+            try {
+                saved = localStorage.getItem(KEY) || localStorage.getItem(LEGACY) || 'compact';
+            } catch(e) {}
             apply(saved);
             toggle.addEventListener('click', function(e){
                 var btn = e.target.closest('.lib-view-btn');

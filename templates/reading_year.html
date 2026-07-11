@@ -1,295 +1,315 @@
 {% extends "base.html" %}
 {% block title %}My Reading Year {{ year_data.year }} · Kwalitec Library{% endblock %}
-{% block body_class_attr %} class="ry-body"{% endblock %}
+{% block body_class_attr %} class="db-body"{% endblock %}
 {% block body %}
 {% set yd = year_data %}
 {% set nav_variant = 'reading_year' %}
 {% include 'components/navbar.html' %}
 
-<div class="ry-shell" id="ryShell"
-     data-year="{{ yd.year }}"
-     data-slide-count="8">
+<div class="db-shell">
+    <div class="db-card db-card--year">
 
-    <aside class="ry-chrome">
-        <div class="ry-chrome-left">
-            <label class="ry-year-label" for="ryYear">Year</label>
-            <select id="ryYear" class="ry-year-select" aria-label="Select reading year">
-                {% for y in yd.available_years %}
-                <option value="{{ y }}" {% if y == yd.year %}selected{% endif %}>{{ y }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="ry-progress" aria-hidden="true">
-            {% for i in range(8) %}
-            <button type="button" class="ry-dot{% if i == 0 %} is-active{% endif %}" data-goto="{{ i }}" aria-label="Go to slide {{ i + 1 }}"></button>
-            {% endfor %}
-        </div>
-        <div class="ry-chrome-right">
-            <div class="ry-format" role="group" aria-label="Export format">
-                <button type="button" class="ry-format-btn is-active" data-format="story">Story</button>
-                <button type="button" class="ry-format-btn" data-format="portrait">Portrait</button>
-                <button type="button" class="ry-format-btn" data-format="square">Square</button>
-            </div>
-            <button type="button" class="ry-export-btn" id="ryExport" title="Download current slide">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                Export
-            </button>
-        </div>
-    </aside>
-
-    <div class="ry-stage" id="ryStage" tabindex="0" aria-live="polite">
-
-        {# 1 · Cover #}
-        <section class="ry-slide ry-slide--cover is-active" data-slide="cover" data-index="0" aria-label="Cover">
-            <div class="ry-slide-inner">
-                <p class="ry-eyebrow">Kwalitec Library</p>
-                <p class="ry-year-hero">{{ yd.year }}</p>
-                <h1 class="ry-display">My Reading Year</h1>
-                <p class="ry-lede">
-                    {% if yd.cover.finished_count %}
-                        {{ yd.username }} · {{ yd.cover.finished_count }} finished
+        <!-- ── Page header ───────────────────────────────── -->
+        <header class="page-intro ry-page-header">
+            <div class="ry-page-header-text">
+                <p class="ab-eyebrow">My Reading Year</p>
+                <h1 class="page-intro-title ry-page-title">{{ yd.year }} in books</h1>
+                <p class="page-intro-sub">
+                    {% if yd.is_empty %}
+                    Finish books with a finish date to build your year story.
                     {% else %}
-                        {{ yd.username }}'s year in books
+                    {{ yd.username }} · {{ yd.library.finished_count }} finished
+                    {% if yd.library.author_count %} · {{ yd.library.author_count }} author{{ 's' if yd.library.author_count != 1 else '' }}{% endif %}
                     {% endif %}
                 </p>
-                <p class="ry-hint">Scroll or use arrow keys</p>
             </div>
+            <div class="ry-year-picker">
+                <label class="ry-year-label" for="ryYear">Year</label>
+                <select id="ryYear" class="db-sort ry-year-select" aria-label="Select reading year">
+                    {% for y in yd.available_years %}
+                    <option value="{{ y }}" {% if y == yd.year %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </header>
+
+        <!-- 1 · Year Summary ─────────────────────────────── -->
+        <section class="ry-section" aria-labelledby="ry-summary-heading">
+            <div class="ry-section-head">
+                <h2 id="ry-summary-heading" class="rs-section-title">Year Summary</h2>
+                <p class="ry-section-sub">The shape of your reading year at a glance.</p>
+            </div>
+            {% if yd.is_empty %}
+            <div class="db-empty db-empty--inline">
+                <div class="db-empty-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                </div>
+                <h3 class="db-empty-title">Your {{ yd.year }} story is waiting.</h3>
+                <p class="db-empty-sub">Mark books Finished and add finish dates — your year summary will fill in from there.</p>
+                <a href="{{ url_for('authors_page', view='library') }}" class="db-cta db-empty-cta">Open Library</a>
+            </div>
+            {% else %}
+            <div class="rs-kpi-row ry-summary-kpis" aria-label="Year summary">
+                <div class="rs-kpi-card rs-kpi-card--finished">
+                    <div class="rs-kpi-val">{{ yd.library.finished_count }}</div>
+                    <div class="rs-kpi-lbl">Finished</div>
+                </div>
+                <div class="rs-kpi-card rs-kpi-card--author">
+                    <div class="rs-kpi-val">{{ yd.library.author_count }}</div>
+                    <div class="rs-kpi-lbl">Authors</div>
+                </div>
+                <div class="rs-kpi-card rs-kpi-card--wild">
+                    <div class="rs-kpi-val">{{ yd.library.wild_count }}</div>
+                    <div class="rs-kpi-lbl">Wild</div>
+                </div>
+                <div class="rs-kpi-card rs-kpi-card--rating">
+                    <div class="rs-kpi-val">{% if yd.library.avg_rating is not none %}{{ '%.1f'|format(yd.library.avg_rating) }}{% else %}—{% endif %}</div>
+                    <div class="rs-kpi-lbl">Avg rating</div>
+                </div>
+            </div>
+            {% if yd.goal.exists %}
+            <div class="ry-goal-inline" role="group" aria-label="Reading goal">
+                <div class="ry-goal-inline-top">
+                    <span class="ry-goal-inline-label">{{ yd.year }} goal</span>
+                    <span class="ry-goal-inline-ratio"><strong>{{ yd.goal.completed }}</strong> / {{ yd.goal.target }}</span>
+                    <span class="ry-goal-inline-pct">{{ yd.goal.percent }}%</span>
+                </div>
+                <div class="rs-goal-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ yd.goal.percent }}">
+                    <div class="rs-goal-fill {% if yd.goal.goal_met %}rs-goal-fill--met{% elif yd.goal.on_pace %}rs-goal-fill--on{% else %}rs-goal-fill--behind{% endif %}" style="width: {{ yd.goal.percent }}%;"></div>
+                </div>
+                {% if yd.goal.pace_label %}<p class="ry-goal-inline-pace">{{ yd.goal.pace_label }}</p>{% endif %}
+            </div>
+            {% endif %}
+            {% endif %}
         </section>
 
-        {# 2 · Library #}
-        <section class="ry-slide" data-slide="library" data-index="1" aria-label="Library" hidden>
-            <div class="ry-slide-inner">
-                <p class="ry-eyebrow">Your library · {{ yd.year }}</p>
-                <h2 class="ry-display ry-display--sm">This year’s shelf</h2>
-                {% if yd.is_empty %}
-                <p class="ry-empty">Finish books with a finish date to build your year story.</p>
-                {% else %}
-                <div class="ry-stat-row">
-                    <div class="ry-stat">
-                        <span class="ry-stat-num">{{ yd.library.finished_count }}</span>
-                        <span class="ry-stat-lbl">Finished</span>
-                    </div>
-                    <div class="ry-stat">
-                        <span class="ry-stat-num">{{ yd.library.author_count }}</span>
-                        <span class="ry-stat-lbl">Authors</span>
-                    </div>
-                    <div class="ry-stat">
-                        <span class="ry-stat-num">{{ yd.library.wild_count }}</span>
-                        <span class="ry-stat-lbl">Wild</span>
-                    </div>
-                    {% if yd.library.avg_rating is not none %}
-                    <div class="ry-stat">
-                        <span class="ry-stat-num">{{ '%.1f'|format(yd.library.avg_rating) }}</span>
-                        <span class="ry-stat-lbl">Avg rating</span>
-                    </div>
+        <!-- 2 · Reading Timeline ─────────────────────────── -->
+        <section class="ry-section" aria-labelledby="ry-timeline-heading">
+            <div class="ry-section-head">
+                <h2 id="ry-timeline-heading" class="rs-section-title">Reading Timeline</h2>
+                <p class="ry-section-sub">How the year unfolded month by month.</p>
+            </div>
+            {% set months = yd.journey.months %}
+            {% set max_m = yd.journey.max_month_count if yd.journey.max_month_count > 0 else 1 %}
+            {% if yd.is_empty or yd.journey.max_month_count == 0 %}
+            <div class="home-empty">
+                <p class="home-empty-title">Your monthly rhythm appears once finishes are dated.</p>
+                <p class="home-empty-sub">Add finish dates on completed books to see the year unfold here.</p>
+            </div>
+            {% else %}
+            <div class="ry-bars ry-bars--light" role="img" aria-label="Books finished per month">
+                {% for m in months %}
+                <div class="ry-bar-col">
+                    <div class="ry-bar" style="--ry-h: {{ ((m.count / max_m) * 100)|round|int }}%" {% if m.count %}data-count="{{ m.count }}"{% endif %}></div>
+                    <span class="ry-bar-lbl">{{ m.label[:1] }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="ry-journey-notes ry-journey-notes--light">
+                {% if yd.journey.busiest_month and yd.journey.busiest_month.count %}
+                <p><strong>{{ yd.journey.busiest_month.label }}</strong> was your busiest month — {{ yd.journey.busiest_month.count }} finished.</p>
+                {% endif %}
+                {% if yd.journey.avg_duration_days is not none %}
+                <p>Average read · <strong>{{ yd.journey.avg_duration_days }} days</strong></p>
+                {% endif %}
+                {% if yd.journey.fastest %}
+                <p>Fastest · <strong>{{ yd.journey.fastest.title }}</strong> ({{ yd.journey.fastest.days }}d)</p>
+                {% endif %}
+                {% if yd.journey.longest %}
+                <p>Longest · <strong>{{ yd.journey.longest.title }}</strong> ({{ yd.journey.longest.days }}d)</p>
+                {% endif %}
+            </div>
+            {% endif %}
+        </section>
+
+        <!-- 3 · Top Books ────────────────────────────────── -->
+        <section class="ry-section" aria-labelledby="ry-books-heading">
+            <div class="ry-section-head">
+                <h2 id="ry-books-heading" class="rs-section-title">Top Books</h2>
+                <p class="ry-section-sub">Book of the Year and your highest-rated finishes.</p>
+            </div>
+            {% if yd.book_of_year %}
+            <article class="ry-feature-card">
+                <div class="ry-feature-cover">
+                    {% if yd.book_of_year.cover_filename %}
+                    <img src="{{ url_for('serve_book_cover', filename=yd.book_of_year.cover_filename) }}"
+                         alt="Cover of {{ yd.book_of_year.title }}"
+                         onerror="this.style.display='none'; var f=this.nextElementSibling; if(f){ f.hidden=false; f.removeAttribute('hidden'); }">
+                    <div class="ry-feature-fallback" hidden aria-hidden="true">{{ yd.book_of_year.title[:1] }}</div>
+                    {% else %}
+                    <div class="ry-feature-fallback" aria-hidden="true">{{ yd.book_of_year.title[:1] }}</div>
                     {% endif %}
                 </div>
-                {% if yd.library.covers %}
-                <div class="ry-cover-strip" aria-hidden="true">
-                    {% for filename in yd.library.covers %}
-                    <img class="ry-cover-thumb" src="{{ url_for('serve_book_cover', filename=filename) }}" alt="" loading="lazy">
-                    {% endfor %}
-                </div>
-                {% endif %}
-                {% endif %}
-            </div>
-        </section>
-
-        {# 3 · Book of the Year #}
-        <section class="ry-slide" data-slide="book" data-index="2" aria-label="Book of the Year" hidden>
-            <div class="ry-slide-inner ry-slide-inner--split">
-                <div class="ry-copy">
-                    <p class="ry-eyebrow">Book of the Year</p>
-                    <h2 class="ry-display ry-display--sm">The one that defined the year</h2>
-                    {% if yd.book_of_year %}
-                    <p class="ry-title">{{ yd.book_of_year.title }}</p>
-                    <p class="ry-meta">by {{ yd.book_of_year.author }}</p>
+                <div class="ry-feature-body">
+                    <p class="ab-eyebrow">Book of the Year</p>
+                    <h3 class="ry-feature-title">{{ yd.book_of_year.title }}</h3>
+                    <p class="ry-feature-meta">by {{ yd.book_of_year.author }}</p>
                     {% if yd.book_of_year.rating %}
-                    <p class="ry-rating" aria-label="Rated {{ yd.book_of_year.rating }} out of 5">
-                        {% for i in range(5) %}
-                        <span class="ry-star{% if i < yd.book_of_year.rating %} is-on{% endif %}">★</span>
-                        {% endfor %}
+                    <p class="ry-feature-rating" aria-label="Rated {{ yd.book_of_year.rating }} out of 5">
+                        {% for i in range(5) %}<span class="ry-star{% if i < yd.book_of_year.rating %} is-on{% endif %}">★</span>{% endfor %}
                     </p>
                     {% endif %}
-                    {% if yd.book_of_year.is_wild %}
-                    <span class="ry-wild">Wild</span>
-                    {% endif %}
-                    {% else %}
-                    <p class="ry-empty">Your highest-rated finish this year will appear here.</p>
-                    {% endif %}
+                    {% if yd.book_of_year.is_wild %}{% include 'components/wild_badge.html' %}{% endif %}
                 </div>
-                {% if yd.book_of_year %}
-                <div class="ry-cover-hero">
-                    {% if yd.book_of_year.cover_filename %}
-                    <img src="{{ url_for('serve_book_cover', filename=yd.book_of_year.cover_filename) }}" alt="Cover of {{ yd.book_of_year.title }}">
-                    {% else %}
-                    <div class="ry-cover-fallback">{{ yd.book_of_year.title[:1] }}</div>
-                    {% endif %}
-                </div>
-                {% endif %}
+            </article>
+            {% else %}
+            <div class="home-empty">
+                <p class="home-empty-title">Your highest-rated finish this year will appear here.</p>
+                <p class="home-empty-sub">Finish and rate a book to crown Book of the Year.</p>
             </div>
-        </section>
+            {% endif %}
 
-        {# 4 · Favourite Author #}
-        <section class="ry-slide" data-slide="author" data-index="3" aria-label="Favourite Author" hidden>
-            <div class="ry-slide-inner">
-                <p class="ry-eyebrow">Favourite Author</p>
-                <h2 class="ry-display ry-display--sm">The voice you returned to</h2>
-                {% if yd.favourite_author %}
-                <p class="ry-title ry-title--accent">{{ yd.favourite_author.name }}</p>
-                <p class="ry-meta">
-                    {{ yd.favourite_author.book_count }} book{% if yd.favourite_author.book_count != 1 %}s{% endif %} finished
-                    {% if yd.favourite_author.avg_rating %}
-                    · {{ '%.1f'|format(yd.favourite_author.avg_rating) }} avg
-                    {% endif %}
-                </p>
-                {% if yd.favourite_author.titles %}
-                <ul class="ry-title-list">
-                    {% for t in yd.favourite_author.titles[:5] %}
-                    <li>{{ t }}</li>
-                    {% endfor %}
-                </ul>
-                {% endif %}
-                {% if yd.favourite_author.covers %}
-                <div class="ry-cover-strip ry-cover-strip--sm" aria-hidden="true">
-                    {% for filename in yd.favourite_author.covers %}
-                    <img class="ry-cover-thumb" src="{{ url_for('serve_book_cover', filename=filename) }}" alt="" loading="lazy">
-                    {% endfor %}
-                </div>
-                {% endif %}
-                {% else %}
-                <p class="ry-empty">Finish more than one book by the same author to crown a favourite.</p>
-                {% endif %}
-            </div>
-        </section>
-
-        {# 5 · Reading Journey #}
-        <section class="ry-slide" data-slide="journey" data-index="4" aria-label="Reading Journey" hidden>
-            <div class="ry-slide-inner">
-                <p class="ry-eyebrow">Reading Journey</p>
-                <h2 class="ry-display ry-display--sm">How the year unfolded</h2>
-                {% set months = yd.journey.months %}
-                {% set max_m = yd.journey.max_month_count if yd.journey.max_month_count > 0 else 1 %}
-                <div class="ry-bars" role="img" aria-label="Books finished per month">
-                    {% for m in months %}
-                    <div class="ry-bar-col">
-                        <div class="ry-bar" style="--ry-h: {{ ((m.count / max_m) * 100)|round|int }}%" {% if m.count %}data-count="{{ m.count }}"{% endif %}></div>
-                        <span class="ry-bar-lbl">{{ m.label[:1] }}</span>
+            {% if yd.library.books and yd.library.books|length > 1 %}
+            <ul class="ry-book-shelf" aria-label="Top finishes">
+                {% for book in yd.library.books[:8] %}
+                {% if not yd.book_of_year or book.id != yd.book_of_year.id %}
+                <li class="ry-shelf-card">
+                    {% with cover_filename=book.cover_filename, title=book.title, thumb_class='book-cover-thumb--finished', svg_size=20, alt=book.title %}
+                    {% include 'components/cover_image.html' %}
+                    {% endwith %}
+                    <div class="ry-shelf-body">
+                        <span class="ry-shelf-title">{{ book.title }}</span>
+                        <span class="ry-shelf-author">{{ book.author }}</span>
+                        {% if book.rating %}
+                        <span class="ry-shelf-rating">★ {{ book.rating }}</span>
+                        {% endif %}
                     </div>
+                </li>
+                {% endif %}
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </section>
+
+        <!-- 4 · Favourite Quote ──────────────────────────── -->
+        <section class="ry-section" aria-labelledby="ry-quote-heading">
+            <div class="ry-section-head">
+                <h2 id="ry-quote-heading" class="rs-section-title">Favourite Quote</h2>
+                <p class="ry-section-sub">The line you marked as favourite — never chosen at random.</p>
+            </div>
+            {% if yd.quote_of_year %}
+            <blockquote class="ry-quote-card">
+                <p class="ry-quote-text">{{ yd.quote_of_year.text }}</p>
+                <footer class="ry-quote-footer">
+                    {% if yd.quote_of_year.book_title %}
+                    <cite>{{ yd.quote_of_year.book_title }}</cite>
+                    {% if yd.quote_of_year.book_author %}<span>· {{ yd.quote_of_year.book_author }}</span>{% endif %}
+                    {% endif %}
+                    {% if yd.quote_of_year.page_ref %}<span>· {{ yd.quote_of_year.page_ref }}</span>{% endif %}
+                </footer>
+            </blockquote>
+            {% else %}
+            <div class="db-empty db-empty--inline">
+                <div class="db-empty-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                </div>
+                <h3 class="db-empty-title">Mark a favourite quote.</h3>
+                <p class="db-empty-sub">Open Quotes and tap ★ Favourite on the passage that stayed with you. Only you choose it.</p>
+                <a href="{{ url_for('quotes_page') }}" class="db-cta db-empty-cta">Go to Quotes</a>
+            </div>
+            {% endif %}
+        </section>
+
+        <!-- 5 · Author Highlights ────────────────────────── -->
+        <section class="ry-section" aria-labelledby="ry-author-heading">
+            <div class="ry-section-head">
+                <h2 id="ry-author-heading" class="rs-section-title">Author Highlights</h2>
+                <p class="ry-section-sub">The voice you returned to most this year.</p>
+            </div>
+            {% if yd.favourite_author %}
+            <article class="ry-author-card">
+                <div class="db-initial ry-author-initial">{{ yd.favourite_author.name[0]|upper }}</div>
+                <div class="ry-author-body">
+                    <h3 class="ry-feature-title">{{ yd.favourite_author.name }}</h3>
+                    <p class="ry-feature-meta">
+                        {{ yd.favourite_author.book_count }} book{% if yd.favourite_author.book_count != 1 %}s{% endif %} finished
+                        {% if yd.favourite_author.avg_rating %} · {{ '%.1f'|format(yd.favourite_author.avg_rating) }} avg{% endif %}
+                    </p>
+                    {% if yd.favourite_author.titles %}
+                    <ul class="ry-title-list ry-title-list--light">
+                        {% for t in yd.favourite_author.titles[:5] %}
+                        <li>{{ t }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+            </article>
+            {% else %}
+            <div class="home-empty">
+                <p class="home-empty-title">Finish books with dates this year to crown a favourite author.</p>
+                <p class="home-empty-sub">Authors with the most finishes rise to the top.</p>
+            </div>
+            {% endif %}
+        </section>
+
+        <!-- 6 · Reading Insights ─────────────────────────── -->
+        <section class="ry-section" aria-labelledby="ry-insights-heading">
+            <div class="ry-section-head">
+                <h2 id="ry-insights-heading" class="rs-section-title">Reading Insights</h2>
+                <p class="ry-section-sub">Pace, goal, and the story so far.</p>
+            </div>
+            <div class="rs-summary-grid">
+                <div class="rs-summary-card">
+                    <span class="rs-summary-lbl">Books finished</span>
+                    <span class="rs-summary-val">{{ yd.closing.finished_count }}</span>
+                </div>
+                <div class="rs-summary-card">
+                    <span class="rs-summary-lbl">Average duration</span>
+                    <span class="rs-summary-val">
+                        {% if yd.journey.avg_duration_days is not none %}
+                        {{ yd.journey.avg_duration_days }}d
+                        {% else %}—{% endif %}
+                    </span>
+                </div>
+                <div class="rs-summary-card">
+                    <span class="rs-summary-lbl">Reading goal</span>
+                    <span class="rs-summary-val">
+                        {% if yd.goal.exists %}
+                        {% if yd.goal.goal_met %}Reached{% else %}{{ yd.goal.percent }}%{% endif %}
+                        {% else %}Not set{% endif %}
+                    </span>
+                    {% if not yd.goal.exists %}
+                    <span class="rs-summary-hint"><a href="{{ url_for('authors_page', view='home') }}#reading-goal">Set a goal for this year</a></span>
+                    {% endif %}
+                </div>
+                <div class="rs-summary-card">
+                    <span class="rs-summary-lbl">Closing note</span>
+                    <span class="rs-summary-val rs-summary-val--text">{{ yd.closing.tagline }}</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 7 · Share Your Year ──────────────────────────── -->
+        <section class="ry-section ry-section--share" aria-labelledby="ry-share-heading">
+            <div class="ry-section-head">
+                <h2 id="ry-share-heading" class="rs-section-title">Share Your Year</h2>
+                <p class="ry-section-sub">Export a slide for stories — same formats as before.</p>
+            </div>
+            <div class="ry-share-toolbar">
+                <div class="ry-format" role="group" aria-label="Export format">
+                    <button type="button" class="ry-format-btn is-active" data-format="story">Story</button>
+                    <button type="button" class="ry-format-btn" data-format="portrait">Portrait</button>
+                    <button type="button" class="ry-format-btn" data-format="square">Square</button>
+                </div>
+                <div class="ry-export-grid">
+                    {% for slide, label in [
+                        ('cover', 'Cover'),
+                        ('library', 'Library'),
+                        ('book', 'Book of the Year'),
+                        ('author', 'Favourite Author'),
+                        ('journey', 'Journey'),
+                        ('goal', 'Goal'),
+                        ('quote', 'Quote'),
+                        ('closing', 'Closing')
+                    ] %}
+                    <button type="button" class="db-cta ry-export-slide" data-slide="{{ slide }}">
+                        Export {{ label }}
+                    </button>
                     {% endfor %}
                 </div>
-                <div class="ry-journey-notes">
-                    {% if yd.journey.busiest_month and yd.journey.busiest_month.count %}
-                    <p><strong>{{ yd.journey.busiest_month.label }}</strong> was your busiest month — {{ yd.journey.busiest_month.count }} finished.</p>
-                    {% endif %}
-                    {% if yd.journey.avg_duration_days is not none %}
-                    <p>Average read · <strong>{{ yd.journey.avg_duration_days }} days</strong></p>
-                    {% endif %}
-                    {% if yd.journey.fastest %}
-                    <p>Fastest · <strong>{{ yd.journey.fastest.title }}</strong> ({{ yd.journey.fastest.days }}d)</p>
-                    {% endif %}
-                    {% if yd.journey.longest %}
-                    <p>Longest · <strong>{{ yd.journey.longest.title }}</strong> ({{ yd.journey.longest.days }}d)</p>
-                    {% endif %}
-                    {% if yd.is_empty %}
-                    <p class="ry-empty">Your monthly rhythm appears once finishes are dated.</p>
-                    {% endif %}
-                </div>
             </div>
         </section>
 
-        {# 6 · Reading Goal #}
-        <section class="ry-slide" data-slide="goal" data-index="5" aria-label="Reading Goal" hidden>
-            <div class="ry-slide-inner">
-                <p class="ry-eyebrow">Reading Goal</p>
-                <h2 class="ry-display ry-display--sm">The target you set</h2>
-                {% if yd.goal.exists %}
-                <p class="ry-goal-ratio">
-                    <span class="ry-goal-done">{{ yd.goal.completed }}</span>
-                    <span class="ry-goal-sep">/</span>
-                    <span class="ry-goal-target">{{ yd.goal.target }}</span>
-                </p>
-                <div class="ry-goal-track" aria-hidden="true">
-                    <div class="ry-goal-fill{% if yd.goal.goal_met %} is-met{% endif %}" style="width: {{ yd.goal.percent }}%"></div>
-                </div>
-                <p class="ry-meta">
-                    {% if yd.goal.goal_met %}
-                        Goal reached
-                    {% else %}
-                        {{ yd.goal.percent }}% of the way
-                    {% endif %}
-                </p>
-                {% if yd.goal.pace_label %}
-                <p class="ry-lede">{{ yd.goal.pace_label }}</p>
-                {% endif %}
-                {% else %}
-                <p class="ry-goal-ratio">
-                    <span class="ry-goal-done">{{ yd.goal.completed }}</span>
-                    <span class="ry-goal-sep ry-goal-sep--solo">finished</span>
-                </p>
-                <p class="ry-empty">Set a yearly goal from your library to track this chapter next time.</p>
-                {% endif %}
-            </div>
-        </section>
-
-        {# 7 · Quote of the Year #}
-        <section class="ry-slide" data-slide="quote" data-index="6" aria-label="Quote of the Year" hidden>
-            <div class="ry-slide-inner">
-                <p class="ry-eyebrow">Quote of the Year</p>
-                <h2 class="ry-display ry-display--sm">Words that stayed</h2>
-                {% if yd.quote_of_year %}
-                <blockquote class="ry-quote">
-                    <p>{{ yd.quote_of_year.text }}</p>
-                    <footer>
-                        {% if yd.quote_of_year.book_title %}
-                        <cite>{{ yd.quote_of_year.book_title }}</cite>
-                        {% if yd.quote_of_year.book_author %}
-                        <span>· {{ yd.quote_of_year.book_author }}</span>
-                        {% endif %}
-                        {% endif %}
-                        {% if yd.quote_of_year.page_ref %}
-                        <span>· p. {{ yd.quote_of_year.page_ref }}</span>
-                        {% endif %}
-                    </footer>
-                </blockquote>
-                {% else %}
-                <p class="ry-empty">Save a line you love — it may become your Quote of the Year.</p>
-                {% endif %}
-            </div>
-        </section>
-
-        {# 8 · Closing #}
-        <section class="ry-slide ry-slide--closing" data-slide="closing" data-index="7" aria-label="Closing" hidden>
-            <div class="ry-slide-inner">
-                <p class="ry-eyebrow">Kwalitec Library</p>
-                <h2 class="ry-display">Until next chapter.</h2>
-                <ul class="ry-closing-list">
-                    {% if yd.closing.finished_count %}
-                    <li>{{ yd.closing.finished_count }} book{% if yd.closing.finished_count != 1 %}s{% endif %} finished</li>
-                    {% endif %}
-                    {% if yd.closing.author_name %}
-                    <li>Favourite author · {{ yd.closing.author_name }}</li>
-                    {% endif %}
-                    {% if yd.closing.book_title %}
-                    <li>Book of the year · {{ yd.closing.book_title }}</li>
-                    {% endif %}
-                    {% if yd.closing.goal_met %}
-                    <li>Reading goal reached</li>
-                    {% endif %}
-                </ul>
-                <p class="ry-closing-tag">{{ yd.closing.tagline }}</p>
-            </div>
-        </section>
-
-    </div>
-
-    <div class="ry-nav-arrows">
-        <button type="button" class="ry-arrow" id="ryPrev" aria-label="Previous slide" disabled>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-        </button>
-        <button type="button" class="ry-arrow" id="ryNext" aria-label="Next slide">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
     </div>
 </div>
 {% endblock %}
@@ -297,92 +317,35 @@
 {% block scripts %}
 <script>
 (function () {
-    const shell = document.getElementById('ryShell');
-    if (!shell) return;
-
-    const year = shell.dataset.year;
-    const slides = Array.from(shell.querySelectorAll('.ry-slide'));
-    const dots = Array.from(shell.querySelectorAll('.ry-dot'));
-    const prevBtn = document.getElementById('ryPrev');
-    const nextBtn = document.getElementById('ryNext');
-    const exportBtn = document.getElementById('ryExport');
-    const yearSelect = document.getElementById('ryYear');
-    const formatBtns = Array.from(shell.querySelectorAll('.ry-format-btn'));
-    let index = 0;
-    let format = 'story';
-
-    function show(i) {
-        index = Math.max(0, Math.min(slides.length - 1, i));
-        slides.forEach((slide, n) => {
-            const on = n === index;
-            slide.classList.toggle('is-active', on);
-            if (on) {
-                slide.removeAttribute('hidden');
-            } else {
-                slide.setAttribute('hidden', '');
-            }
+    var yearSelect = document.getElementById('ryYear');
+    if (yearSelect) {
+        yearSelect.addEventListener('change', function () {
+            window.location.href = '/reading-year/' + yearSelect.value;
         });
-        dots.forEach((dot, n) => dot.classList.toggle('is-active', n === index));
-        prevBtn.disabled = index === 0;
-        nextBtn.disabled = index === slides.length - 1;
     }
 
-    function currentSlideId() {
-        return slides[index].dataset.slide;
-    }
-
-    prevBtn.addEventListener('click', () => show(index - 1));
-    nextBtn.addEventListener('click', () => show(index + 1));
-    dots.forEach(dot => {
-        dot.addEventListener('click', () => show(Number(dot.dataset.goto)));
-    });
-
-    document.addEventListener('keydown', (e) => {
-        if (e.target.matches('input, textarea, select')) return;
-        if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
-            e.preventDefault();
-            show(index + 1);
-        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-            e.preventDefault();
-            show(index - 1);
-        }
-    });
-
-    let touchX = null;
-    shell.addEventListener('touchstart', (e) => {
-        touchX = e.changedTouches[0].screenX;
-    }, { passive: true });
-    shell.addEventListener('touchend', (e) => {
-        if (touchX === null) return;
-        const dx = e.changedTouches[0].screenX - touchX;
-        touchX = null;
-        if (Math.abs(dx) < 48) return;
-        show(index + (dx < 0 ? 1 : -1));
-    }, { passive: true });
-
-    formatBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            format = btn.dataset.format;
-            formatBtns.forEach(b => b.classList.toggle('is-active', b === btn));
+    var format = 'story';
+    var year = {{ yd.year }};
+    document.querySelectorAll('.ry-format-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            format = btn.getAttribute('data-format') || 'story';
+            document.querySelectorAll('.ry-format-btn').forEach(function (b) {
+                b.classList.toggle('is-active', b === btn);
+            });
         });
     });
-
-    exportBtn.addEventListener('click', () => {
-        const slide = currentSlideId();
-        const url = `/reading-year/${year}/export/${slide}.png?format=${encodeURIComponent(format)}`;
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = '';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
+    document.querySelectorAll('.ry-export-slide').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var slide = btn.getAttribute('data-slide');
+            var url = '/reading-year/' + year + '/export/' + slide + '.png?format=' + encodeURIComponent(format);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = '';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        });
     });
-
-    yearSelect.addEventListener('change', () => {
-        window.location.href = `/reading-year/${yearSelect.value}`;
-    });
-
-    show(0);
 })();
 </script>
 {% endblock %}

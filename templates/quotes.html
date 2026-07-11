@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Reading Diary — Book Tracker{% endblock %}
+{% block title %}Quotes — Book Tracker{% endblock %}
 
 {% block body_class_attr %} class="db-body"{% endblock %}
 
@@ -8,23 +8,22 @@
     <div class="db-shell">
         <div class="db-card">
 
-            <!-- ── Navigation ──────────────────────────────── -->
             {% set nav_variant='quotes' %}
             {% include 'components/navbar.html' %}
 
-            <!-- ── Hero ─────────────────────────────────────── -->
-            <div class="qt-hero">
-                <div class="ab-hero-text">
-                    <p class="ab-eyebrow">Reading Diary</p>
-                    <h1 class="ab-title">Your Saved Passages</h1>
+            <div class="page-intro qt-page-intro">
+                <div>
+                    <h2 class="page-intro-title">Quotes</h2>
+                    <p class="page-intro-sub">{% if quote_count %}{{ quote_count }} saved passage{{ 's' if quote_count != 1 else '' }} — mark one ★ Favourite for My Reading Year.{% else %}Save passages from any book, then mark your favourite.{% endif %}</p>
                 </div>
+                {% if quote_count %}
                 <div class="ab-stat qt-hero-stat">
                     <span class="ab-stat-val">{{ quote_count }}</span>
                     <span class="ab-stat-lbl">Quote{{ 's' if quote_count != 1 else '' }}</span>
                 </div>
+                {% endif %}
             </div>
 
-            <!-- ── Quotes list ───────────────────────────────── -->
             {% if groups %}
             <div class="qt-list">
                 {% for group in groups %}
@@ -42,24 +41,38 @@
                     </div>
                     <div class="qt-group-quotes">
                         {% for q in group.quotes %}
-                        <div class="qt-entry">
+                        <div class="qt-entry{% if q.is_favourite %} qt-entry--favourite{% endif %}">
                             <div class="qt-entry-body">
                                 <svg class="qt-mark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/></svg>
                                 <p class="qt-text">{{ q.text }}</p>
+                                {% if q.is_favourite %}
+                                <span class="qt-fav-badge" title="Favourite quote">★ Favourite</span>
+                                {% endif %}
                             </div>
                             <div class="qt-entry-meta">
-                                <span class="qt-date">{{ q.date_added.strftime('%b %d, %Y') }}</span>
+                                <span class="qt-date">{% if q.date_added %}{{ q.date_added.strftime('%b %d, %Y') }}{% endif %}</span>
                                 {% if q.page_ref %}<span class="qt-sep">&middot;</span><span class="qt-page">{{ q.page_ref }}</span>{% endif %}
                             </div>
                             <div class="qt-entry-actions">
+                                {% if q.is_favourite %}
+                                <form method="POST" action="{{ url_for('unfavourite_quote', quote_id=q.id) }}" style="margin:0">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="qt-fav-btn is-active" title="Remove favourite" aria-label="Remove favourite" aria-pressed="true">★</button>
+                                </form>
+                                {% else %}
+                                <form method="POST" action="{{ url_for('favourite_quote', quote_id=q.id) }}" style="margin:0">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="qt-fav-btn" title="Mark as favourite" aria-label="Mark as favourite" aria-pressed="false">☆</button>
+                                </form>
+                                {% endif %}
                                 <button type="button" class="qt-edit-btn"
                                         data-quote='{{ {"id": q.id, "text": q.text, "page_ref": q.page_ref or "", "book_title": group.book.title, "author": group.book.author} | tojson }}'
-                                        title="Edit passage">
+                                        title="Edit passage" aria-label="Edit passage">
                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                                 </button>
                                 <form method="POST" action="{{ url_for('delete_quote', quote_id=q.id) }}" style="margin:0">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <button type="submit" class="qt-del-btn" onclick="return confirm('Remove this passage?')" title="Delete">
+                                    <button type="submit" class="qt-del-btn" onclick="return confirm('Remove this passage?')" title="Delete passage" aria-label="Delete passage">
                                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
                                     </button>
                                 </form>
@@ -73,37 +86,36 @@
             {% else %}
             <div class="db-empty">
                 <div class="db-empty-icon">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                 </div>
-                <h3 class="db-empty-title">Your diary starts here.</h3>
-                <p class="db-empty-sub">Open any author's page and tap the speech-bubble icon<br>to save a favourite passage.</p>
-                <a href="{{ url_for('authors_page') }}" class="db-cta db-empty-cta">
+                <h3 class="db-empty-title">Save your first passage.</h3>
+                <p class="db-empty-sub">Open any author's page and tap the speech-bubble icon to keep a line you love — then mark it ★ Favourite for My Reading Year.</p>
+                <a href="{{ url_for('authors_page', view='authors') }}" class="db-cta db-empty-cta">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-                    Go to Library
+                    Go to Authors
                 </a>
             </div>
             {% endif %}
 
-        </div><!-- /.db-card -->
-    </div><!-- /.db-shell -->
+        </div>
+    </div>
 
-    <!-- Edit Quote Modal -->
     <div id="editQuoteModal" class="modal-overlay" aria-hidden="true">
       <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="editQuoteModalTitle">
         <button class="modal-close" aria-label="Close">&times;</button>
         <h2 id="editQuoteModalTitle">Edit Passage</h2>
-        <p id="eqmBookLabel" style="font-size:0.85rem;color:#64748B;margin:-6px 0 16px;"></p>
+        <p id="eqmBookLabel" class="modal-sublabel"></p>
         <form method="POST" id="editQuoteForm" action="" class="rating-form">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="form-group">
-                <label>Passage</label>
+                <label for="eqmText">Passage</label>
                 <textarea name="text" id="eqmText" class="qm-textarea" maxlength="2000" required></textarea>
             </div>
             <div class="form-group">
-                <label>Page Reference <span style="font-weight:400;color:#94A3B8;">(optional)</span></label>
+                <label for="eqmPageRef">Page Reference <span class="field-hint-inline">(optional)</span></label>
                 <input type="text" name="page_ref" id="eqmPageRef" placeholder="e.g. p. 142" maxlength="20">
             </div>
-            <div style="display:flex; gap:10px; margin-top:12px;">
+            <div class="modal-actions">
                 <button type="submit" class="btn-primary">Save Changes</button>
             </div>
         </form>

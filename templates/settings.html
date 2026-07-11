@@ -29,17 +29,17 @@
             <form method="POST" action="{{ url_for('change_password') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="sett-field">
-                    <label>Current Password</label>
-                    <input type="password" name="current_password" autocomplete="current-password" required>
+                    <label for="settCurrentPw">Current Password</label>
+                    <input id="settCurrentPw" type="password" name="current_password" autocomplete="current-password" required>
                 </div>
                 <div class="sett-field">
-                    <label>New Password</label>
-                    <input type="password" name="new_password" autocomplete="new-password" minlength="8" required>
+                    <label for="settNewPw">New Password</label>
+                    <input id="settNewPw" type="password" name="new_password" autocomplete="new-password" minlength="8" required>
                     <p class="sett-hint">At least 8 characters.</p>
                 </div>
                 <div class="sett-field">
-                    <label>Confirm New Password</label>
-                    <input type="password" name="confirm_password" autocomplete="new-password" minlength="8" required>
+                    <label for="settConfirmPw">Confirm New Password</label>
+                    <input id="settConfirmPw" type="password" name="confirm_password" autocomplete="new-password" minlength="8" required>
                 </div>
                 <div class="sett-form-footer">
                     <button type="submit" class="sett-btn sett-btn--primary">Update Password</button>
@@ -75,8 +75,8 @@
             <form method="POST" action="{{ url_for('set_security_question') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="sett-field">
-                    <label>Security Question</label>
-                    <select name="security_question" required>
+                    <label for="settSecQ">Security Question</label>
+                    <select id="settSecQ" name="security_question" required>
                         <option value="" disabled {% if not user_security_question %}selected{% endif %}>— choose a question —</option>
                         {% for q in security_questions %}
                         <option value="{{ q }}" {% if q == user_security_question %}selected{% endif %}>{{ q }}</option>
@@ -84,14 +84,14 @@
                     </select>
                 </div>
                 <div class="sett-field">
-                    <label>Your Answer</label>
-                    <input type="text" name="security_answer" autocomplete="off"
+                    <label for="settSecA">Your Answer</label>
+                    <input id="settSecA" type="text" name="security_answer" autocomplete="off"
                            placeholder="Not case-sensitive" required minlength="2">
                     <p class="sett-hint">Stored securely — only you will know this.</p>
                 </div>
                 <div class="sett-field">
-                    <label>Confirm with Current Password</label>
-                    <input type="password" name="sq_password" autocomplete="current-password" required>
+                    <label for="settSecPw">Confirm with Current Password</label>
+                    <input id="settSecPw" type="password" name="sq_password" autocomplete="current-password" required>
                 </div>
                 <div class="sett-form-footer">
                     <button type="submit" class="sett-btn sett-btn--primary">

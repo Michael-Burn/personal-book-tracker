@@ -187,6 +187,7 @@ class StatisticsService:
                 'bookCount': a['bookCount'],
                 'titles': a['titles'],
                 'avgRating': avg,
+                'ratingCount': a['ratingCount'],
                 'wildCount': a['wildCount'],
                 'statuses': a['statuses'],
             })
@@ -296,20 +297,24 @@ class StatisticsService:
             key=lambda x: (-x[1], x[0]),
         )[:top_authors_limit]
 
+        finished_month_data = [finished_month_counts.get(k, 0) for k in month_keys]
+        rating_dist_data = [rating_counts[i] for i in range(1, 6)]
+        top_author_counts = [count for _, count in top_author_pairs]
         charts = {
             'finished_per_month': {
                 'labels_js': json.dumps(month_labels),
-                'data_js': json.dumps(
-                    [finished_month_counts.get(k, 0) for k in month_keys]
-                ),
+                'data_js': json.dumps(finished_month_data),
+                'has_data': any(finished_month_data),
             },
             'rating_distribution': {
                 'labels_js': json.dumps(['1★', '2★', '3★', '4★', '5★']),
-                'data_js': json.dumps([rating_counts[i] for i in range(1, 6)]),
+                'data_js': json.dumps(rating_dist_data),
+                'has_data': any(rating_dist_data),
             },
             'top_authors': {
                 'labels_js': json.dumps([name for name, _ in top_author_pairs]),
-                'data_js': json.dumps([count for _, count in top_author_pairs]),
+                'data_js': json.dumps(top_author_counts),
+                'has_data': any(top_author_counts),
             },
         }
 
@@ -952,49 +957,24 @@ class StatisticsService:
                 'projection_label': None,
             }
 
-        # Quote of the Year — prefer quotes on year finishes, else quotes dated in year
-        year_book_ids = {b.id for b in year_books}
-        year_book_by_id = {b.id: b for b in year_books}
-        candidate_quotes = []
-        for q in quotes:
-            book = year_book_by_id.get(q.book_id)
-            in_year_book = q.book_id in year_book_ids
-            dated_in_year = (
-                q.date_added is not None and q.date_added.year == year
-            )
-            if not (in_year_book or dated_in_year):
-                continue
-            # Score: linked to year finish, high book rating, longer text
-            book_rating = (
-                book.rating if book is not None and has_rating(book) else 0
-            )
-            score = (
-                (2 if in_year_book else 0),
-                book_rating,
-                len(q.text or ''),
-                q.date_added or datetime.min,
-            )
-            candidate_quotes.append((score, q, book))
-
+        # Favourite Quote — user-marked only (never random / heuristic)
         quote_of_year = None
-        if candidate_quotes:
-            candidate_quotes.sort(key=lambda row: row[0], reverse=True)
-            _, q, book = candidate_quotes[0]
-            # Fall back book lookup for quotes dated in year but book finished elsewhere
-            if book is None:
-                for b in books:
-                    if b.id == q.book_id:
-                        book = b
-                        break
+        favourite_q = next(
+            (q for q in quotes if getattr(q, 'is_favourite', False)),
+            None,
+        )
+        if favourite_q is not None:
+            book = next((b for b in books if b.id == favourite_q.book_id), None)
             quote_of_year = {
-                'text': q.text,
-                'page_ref': q.page_ref,
+                'text': favourite_q.text,
+                'page_ref': favourite_q.page_ref,
                 'book_title': book.title if book else None,
                 'book_author': book.author if book else None,
                 'cover_filename': book.cover_filename if book else None,
                 'rating': (
                     book.rating if book is not None and has_rating(book) else None
                 ),
+                'is_favourite': True,
             }
 
         is_empty = finished_count == 0

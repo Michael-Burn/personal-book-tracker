@@ -11,6 +11,7 @@
     <img src="{{ url_for('serve_book_cover', filename=cover_filename) }}"
          alt="{{ alt if alt is defined else '' }}"
          loading="lazy"
+         decoding="async"
          onerror="this.style.display='none'; var p=this.nextElementSibling; if(p) p.hidden=false;">
     {% endif %}
     <div class="book-cover-placeholder" aria-hidden="true" {% if cover_filename %}hidden{% endif %}>

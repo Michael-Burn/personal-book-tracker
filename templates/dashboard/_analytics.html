@@ -1,0 +1,180 @@
+{# Analytics — KPIs, charts, reading summary, activity timeline #}
+
+<div class="page-intro">
+    <h2 class="page-intro-title">Analytics</h2>
+    <p class="page-intro-sub">{% if is_empty %}Patterns appear once your library has a few books.{% else %}Your reading patterns, pace, and recent activity.{% endif %}</p>
+</div>
+
+{% if is_empty %}
+<div class="db-empty db-empty--analytics">
+    <div class="db-empty-icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    </div>
+    <h3 class="db-empty-title">Your reading journey starts with your next book.</h3>
+    <p class="db-empty-sub">Add titles, finish dates, and ratings — charts and activity will fill in from there.</p>
+    <a href="{{ url_for('add') }}?next={{ url_for('authors_page', view='analytics') }}" class="db-cta db-empty-cta open-add-modal">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Your First Book
+    </a>
+</div>
+{% endif %}
+
+<!-- ── Reading Statistics KPIs ─────────────────── -->
+<div class="rs-kpi-row" aria-label="Reading statistics">
+    <div class="rs-kpi-card rs-kpi-card--finished">
+        <div class="rs-kpi-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <div class="rs-kpi-val">{{ kpis.books_finished }}</div>
+        <div class="rs-kpi-lbl">Books Finished</div>
+    </div>
+    <div class="rs-kpi-card rs-kpi-card--reading">
+        <div class="rs-kpi-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        </div>
+        <div class="rs-kpi-val">{{ kpis.currently_reading }}</div>
+        <div class="rs-kpi-lbl">Currently Reading</div>
+    </div>
+    <div class="rs-kpi-card rs-kpi-card--want">
+        <div class="rs-kpi-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div class="rs-kpi-val">{{ kpis.want_to_read }}</div>
+        <div class="rs-kpi-lbl">Want To Read</div>
+    </div>
+    <div class="rs-kpi-card rs-kpi-card--rating">
+        <div class="rs-kpi-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </div>
+        <div class="rs-kpi-val">{% if kpis.average_rating_display %}{{ kpis.average_rating_display }}{% else %}—{% endif %}</div>
+        <div class="rs-kpi-lbl">Average Rating</div>
+    </div>
+    <div class="rs-kpi-card rs-kpi-card--wild">
+        <div class="rs-kpi-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+        </div>
+        <div class="rs-kpi-val">{{ kpis.wild_books }}</div>
+        <div class="rs-kpi-lbl">Wild Books</div>
+    </div>
+    <div class="rs-kpi-card rs-kpi-card--author">
+        <div class="rs-kpi-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div class="rs-kpi-val rs-kpi-val--text">{% if kpis.favourite_author %}{{ kpis.favourite_author }}{% else %}—{% endif %}</div>
+        <div class="rs-kpi-lbl">Favourite Author</div>
+    </div>
+</div>
+
+{% if not is_empty %}
+<!-- ── Charts ─────────────────────────────────── -->
+<div class="rs-charts-row" aria-label="Reading charts">
+    <div class="rs-chart-panel">
+        <div class="rs-panel-header">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Books Finished Per Month
+        </div>
+        {% if charts.finished_per_month.has_data %}
+        <canvas id="finishedMonthChart" height="200" aria-label="Books finished per month chart"></canvas>
+        {% else %}
+        <p class="rs-chart-empty" role="status">Add finish dates to see your monthly rhythm.</p>
+        {% endif %}
+    </div>
+    <div class="rs-chart-panel">
+        <div class="rs-panel-header">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            Rating Distribution
+        </div>
+        {% if charts.rating_distribution.has_data %}
+        <canvas id="ratingDistChart" height="200" aria-label="Rating distribution chart"></canvas>
+        {% else %}
+        <p class="rs-chart-empty" role="status">Rate a finished book to unlock this chart.</p>
+        {% endif %}
+    </div>
+    <div class="rs-chart-panel">
+        <div class="rs-panel-header">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Top Authors
+        </div>
+        {% if charts.top_authors.has_data %}
+        <canvas id="topAuthorsChart" height="200" aria-label="Top authors chart"></canvas>
+        {% else %}
+        <p class="rs-chart-empty" role="status">Authors will rank here as your library grows.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ── Reading Summary ────────────────────────── -->
+<section class="rs-summary" aria-label="Reading summary">
+    <h2 class="rs-section-title">Reading Summary</h2>
+    <div class="rs-summary-grid">
+        <div class="rs-summary-card">
+            <span class="rs-summary-lbl">Average Reading Duration</span>
+            <span class="rs-summary-val">
+                {% if reading_summary.average_duration_days is not none %}
+                {{ reading_summary.average_duration_days }} day{{ 's' if reading_summary.average_duration_days != 1 else '' }}
+                {% else %}—{% endif %}
+            </span>
+            {% if reading_summary.sample_count == 0 %}
+            <span class="rs-summary-hint">Needs start &amp; finish dates</span>
+            {% endif %}
+        </div>
+        <div class="rs-summary-card">
+            <span class="rs-summary-lbl">Fastest Read</span>
+            {% if reading_summary.fastest %}
+            <span class="rs-summary-val">{{ reading_summary.fastest.days }} day{{ 's' if reading_summary.fastest.days != 1 else '' }}</span>
+            <span class="rs-summary-sub">{{ reading_summary.fastest.title }}</span>
+            {% else %}
+            <span class="rs-summary-val">—</span>
+            {% endif %}
+        </div>
+        <div class="rs-summary-card">
+            <span class="rs-summary-lbl">Longest Read</span>
+            {% if reading_summary.longest %}
+            <span class="rs-summary-val">{{ reading_summary.longest.days }} day{{ 's' if reading_summary.longest.days != 1 else '' }}</span>
+            <span class="rs-summary-sub">{{ reading_summary.longest.title }}</span>
+            {% else %}
+            <span class="rs-summary-val">—</span>
+            {% endif %}
+        </div>
+        <div class="rs-summary-card">
+            <span class="rs-summary-lbl">Books Finished This Year</span>
+            <span class="rs-summary-val">{{ reading_summary.finished_this_year }}</span>
+            <span class="rs-summary-hint">Based on finish dates</span>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- ── Recent Activity ────────────────────────── -->
+<section class="timeline-panel timeline-panel--activity home-activity" aria-label="Recent activity">
+    <h2 class="timeline-panel-title">Recent Activity</h2>
+    {% if recent_activity %}
+    <ul class="timeline-list">
+        {% for event in recent_activity %}
+        <li class="timeline-item timeline-item--{{ event.kind }}">
+            <div class="timeline-item-main">
+                <span class="timeline-item-kind">
+                    {% if event.kind == 'finished' %}Finished Reading
+                    {% elif event.kind == 'started' %}Started Reading
+                    {% elif event.kind == 'added' %}Book Added
+                    {% elif event.kind == 'wild' %}Marked Wild
+                    {% else %}{{ event.kind }}{% endif %}
+                </span>
+                <span class="timeline-item-title">{{ event.book.title }}</span>
+                <span class="timeline-item-sub">{{ event.book.author }}</span>
+            </div>
+            <div class="timeline-item-meta">
+                {% if event.event_date %}
+                <span class="timeline-item-date">{{ event.event_date.strftime('%b %d, %Y') }}</span>
+                {% endif %}
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <div class="home-empty home-empty--activity">
+        <p class="home-empty-title">{% if is_empty %}Your reading journey starts with your next book.{% else %}No recent activity yet.{% endif %}</p>
+        <p class="home-empty-sub">{% if is_empty %}Starts, finishes, and wild picks will show up here as your library grows.{% else %}Add start or finish dates to see more of your journey here.{% endif %}</p>
+    </div>
+    {% endif %}
+</section>

@@ -99,15 +99,21 @@
                         <div class="sp-rank-body">
                             <div class="sp-rank-name">{{ author.name }}</div>
                             <div class="sp-rank-meta">
-                                <span class="sp-stars" aria-label="{{ '%.1f' | format(author.avg_rating) }} out of 5 stars">
+                                <span class="sp-stars" aria-label="{% if author.avg_rating %}{{ '%.1f' | format(author.avg_rating) }} out of 5 stars{% else %}Unrated{% endif %}">
+                                    {% if author.avg_rating %}
                                     {% for _ in range(author.avg_rating | round | int) %}★{% endfor %}{% for _ in range(5 - (author.avg_rating | round | int)) %}☆{% endfor %}
+                                    {% else %}
+                                    Unrated
+                                    {% endif %}
                                 </span>
+                                {% if author.avg_rating %}
                                 <span>{{ '%.1f' | format(author.avg_rating) }} avg</span>
                                 <span class="sp-meta-sep" aria-hidden="true">·</span>
+                                {% endif %}
                                 <span>{{ author.book_count }} book{{ 's' if author.book_count != 1 else '' }}</span>
                             </div>
                         </div>
-                        <div class="sp-rank-score" aria-hidden="true">{{ '%.1f' | format(author.avg_rating) }}</div>
+                        <div class="sp-rank-score" aria-hidden="true">{% if author.avg_rating %}{{ '%.1f' | format(author.avg_rating) }}{% else %}—{% endif %}</div>
                     </li>
                     {% endfor %}
                 </ol>
@@ -119,7 +125,7 @@
                         </svg>
                     </div>
                     <p class="sp-empty-title">No favourites yet.</p>
-                    <p class="sp-empty-sub">Your highest-rated authors will appear here as you build your library.</p>
+                    <p class="sp-empty-sub">Rate finished books — your top authors will rise to the top here.</p>
                     {% if current_user.is_authenticated and current_user.username == profile_user.username %}
                     <a href="{{ url_for('authors_page') }}" class="sp-empty-cta">Rate Your First Book</a>
                     {% endif %}
@@ -164,15 +170,19 @@
                         <div class="sp-rank-body">
                             <div class="sp-rank-name">{{ book.title }}</div>
                             <div class="sp-rank-meta">
-                                <span class="sp-stars" aria-label="{{ book.rating }} out of 5 stars">
-                                    {% for _ in range(book.rating or 0) %}★{% endfor %}{% for _ in range(5 - (book.rating or 0)) %}☆{% endfor %}
+                                <span class="sp-stars" aria-label="{% if book.rating %}{{ book.rating }} out of 5 stars{% else %}Unrated{% endif %}">
+                                    {% if book.rating %}
+                                    {% for _ in range(book.rating) %}★{% endfor %}{% for _ in range(5 - book.rating) %}☆{% endfor %}
+                                    {% else %}
+                                    Unrated
+                                    {% endif %}
                                 </span>
                                 {% if book.is_wild %}{% include 'components/wild_badge.html' %}{% endif %}
                                 <span class="sp-meta-sep" aria-hidden="true">·</span>
                                 <span>by {{ book.author }}</span>
                             </div>
                         </div>
-                        <div class="sp-rank-score" aria-hidden="true">{{ book.rating }}.0</div>
+                        <div class="sp-rank-score" aria-hidden="true">{% if book.rating %}{{ book.rating }}.0{% else %}—{% endif %}</div>
                     </li>
                     {% endfor %}
                 </ol>
@@ -185,7 +195,7 @@
                         </svg>
                     </div>
                     <p class="sp-empty-title">No favourites yet.</p>
-                    <p class="sp-empty-sub">Your highest-rated books will appear here as you build your library.</p>
+                    <p class="sp-empty-sub">Rate finished books — your highest-rated titles will appear here.</p>
                     {% if current_user.is_authenticated and current_user.username == profile_user.username %}
                     <a href="{{ url_for('authors_page') }}" class="sp-empty-cta">Rate Your First Book</a>
                     {% endif %}

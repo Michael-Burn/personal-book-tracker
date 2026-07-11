@@ -1,0 +1,49 @@
+{# Authors — author list, search, sorting #}
+
+<div class="page-intro">
+    <h2 class="page-intro-title">Authors</h2>
+    <p class="page-intro-sub">{% if authors|length == 0 %}Browse and sort the writers in your library once you add books.{% else %}{{ authors|length }} author{{ 's' if authors|length != 1 else '' }} in your library{% endif %}</p>
+</div>
+
+<!-- ── Toolbar ────────────────────────────────── -->
+<div class="db-toolbar">
+    <div class="db-controls">
+        <div class="db-search-wrap">
+            <svg class="db-search-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input id="authorSearch" class="db-search" placeholder="Search authors or titles…" aria-label="Search authors or titles">
+        </div>
+        <select id="statusFilter" class="db-sort" aria-label="Filter by reading status">
+            <option value="">All statuses</option>
+            {% for value, label in reading_statuses %}
+            <option value="{{ value }}">{{ label }}</option>
+            {% endfor %}
+        </select>
+        <select id="sortSelect" class="db-sort" aria-label="Sort authors">
+            <option value="name_asc">Name (A–Z)</option>
+            <option value="count_desc">Most Books</option>
+            <option value="rating_desc">Top Rated</option>
+        </select>
+    </div>
+    {% if authors|length > 0 %}
+    {% with toggle_id='authorsViewToggle', toggle_kind='authors' %}
+    {% include 'components/view_toggle.html' %}
+    {% endwith %}
+    {% endif %}
+</div>
+
+<!-- ── Authors list (JS-rendered) ──────────────── -->
+<div id="authorsList" class="db-list db-list--compact" aria-live="polite">
+    {% if authors|length == 0 %}
+    <div class="db-empty">
+        <div class="db-empty-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        </div>
+        <h3 class="db-empty-title">Add your first book.</h3>
+        <p class="db-empty-sub">Authors appear here as you build your shelf — search, sort, and open any writer’s page.</p>
+        <a href="{{ url_for('add') }}?next={{ url_for('authors_page', view='authors') }}" class="db-cta db-empty-cta open-add-modal">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Your First Book
+        </a>
+    </div>
+    {% endif %}
+</div>

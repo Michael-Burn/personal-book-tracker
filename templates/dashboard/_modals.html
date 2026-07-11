@@ -1,0 +1,90 @@
+{# Shared modals for dashboard views (add book + quote) #}
+<div id="quoteModal" class="modal-overlay" aria-hidden="true">
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="quoteModalTitle">
+    <button class="modal-close" aria-label="Close">×</button>
+    <h2 id="quoteModalTitle">Save a Passage</h2>
+    <p id="qmBookLabel" style="font-size:0.85rem;color:#64748B;margin:-6px 0 16px;"></p>
+    <form method="POST" action="{{ url_for('add_quote') }}" class="rating-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="book_id" id="qmBookId" value="">
+        <div class="form-group">
+            <label>Passage</label>
+            <textarea name="text" class="qm-textarea" placeholder="Enter the passage here…" maxlength="2000" required></textarea>
+        </div>
+        <div class="form-group">
+            <label>Page Reference <span style="font-weight:400;color:#94A3B8;">(optional)</span></label>
+            <input type="text" name="page_ref" placeholder="e.g. p. 142" maxlength="20">
+        </div>
+        <div style="display:flex; gap:10px; margin-top:12px;">
+            <button type="submit" class="btn-primary">Save Passage</button>
+        </div>
+    </form>
+  </div>
+</div>
+
+<div id="addModal" class="modal-overlay" aria-hidden="true">
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="addModalTitle">
+    <button class="modal-close" aria-label="Close">×</button>
+    <h2 id="addModalTitle">Rate a New Book</h2>
+    <form method="POST" action="{{ url_for('add') }}" class="rating-form" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="next" value="{{ request.full_path.rstrip('?') }}">
+        {% include 'components/book_meta_search.html' %}
+        <div class="form-group">
+            <label>Author</label>
+            <input type="text" name="author" placeholder="e.g. F. Scott Fitzgerald" required>
+        </div>
+        <div class="form-group">
+            <label>Reading Status</label>
+            <select name="reading_status" class="reading-status-select">
+                {% for value, label in reading_statuses %}
+                <option value="{{ value }}" {% if value == 'finished' %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group timeline-field timeline-field--start" data-timeline="start">
+            <label>Started Reading <span class="timeline-hint timeline-hint--recommended" hidden>(recommended)</span></label>
+            <input type="date" name="started_reading_at" class="timeline-start-input">
+        </div>
+        <div class="form-group timeline-field timeline-field--finish" data-timeline="finish">
+            <label>Finished Reading <span class="timeline-hint timeline-hint--required">(required)</span><span class="timeline-hint timeline-hint--optional" hidden>(optional)</span></label>
+            <input type="date" name="finished_reading_at" class="timeline-finish-input" required>
+        </div>
+        <div class="form-group">
+            <label>My Rating <span class="rating-optional-hint" hidden>(optional)</span></label>
+            <select name="rating" class="rating-select">
+                <option value="">No rating yet</option>
+                <option value="5" selected>★★★★★ - Amazing</option>
+                <option value="4">★★★★☆ - Great</option>
+                <option value="3">★★★☆☆ - Good</option>
+                <option value="2">★★☆☆☆ - Okay</option>
+                <option value="1">★☆☆☆☆ - Bad</option>
+            </select>
+        </div>
+        <div class="form-group form-group--check">
+            <label class="wild-check">
+                <input type="checkbox" name="is_wild" value="1">
+                <span>🔥 Wild</span>
+            </label>
+        </div>
+        <div class="form-group cover-upload">
+            <label>Upload Cover <span class="cover-upload-hint">(optional)</span></label>
+            <div class="cover-upload-row">
+                <div class="cover-preview" id="addCoverPreview">
+                    <div class="book-cover-placeholder book-cover-placeholder--preview" id="addCoverPh">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                    </div>
+                    <img id="addCoverImg" class="cover-preview-img" alt="" hidden>
+                </div>
+                <div class="cover-upload-controls">
+                    <input type="file" name="cover" id="addCoverInput" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+                    <p class="cover-upload-note">JPG, PNG, or WEBP · max 5 MB</p>
+                </div>
+            </div>
+        </div>
+        <div style="display:flex; gap:10px; margin-top:12px;">
+            <button type="submit" class="btn-primary">Save to Library</button>
+        </div>
+    </form>
+  </div>
+</div>
