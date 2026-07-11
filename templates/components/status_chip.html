@@ -1,0 +1,4 @@
+{# Status chip — expects: status (str); ReadingStatus in template context #}
+<span class="status-chip status-chip--{{ status or 'finished' }}">
+    {{ ReadingStatus.chip_label(status or 'finished') }}
+</span>

@@ -1,32 +1,16 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Reading Diary — Book Tracker</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body class="db-body">
+{% extends "base.html" %}
+
+{% block title %}Reading Diary — Book Tracker{% endblock %}
+
+{% block body_class_attr %} class="db-body"{% endblock %}
+
+{% block body %}
     <div class="db-shell">
         <div class="db-card">
 
             <!-- ── Navigation ──────────────────────────────── -->
-            <nav class="db-nav">
-                <a class="db-logo" href="{{ url_for('authors_page') }}">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-                    <span>Book Tracker</span>
-                </a>
-                <div class="db-nav-actions">
-                    <a href="{{ url_for('authors_page') }}" class="db-nav-btn">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-                        Library
-                    </a>
-                    <a href="{{ url_for('logout') }}" class="db-nav-btn db-nav-btn--out">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                        Sign Out
-                    </a>
-                </div>
-            </nav>
+            {% set nav_variant='quotes' %}
+            {% include 'components/navbar.html' %}
 
             <!-- ── Hero ─────────────────────────────────────── -->
             <div class="qt-hero">
@@ -46,6 +30,9 @@
                 {% for group in groups %}
                 <div class="qt-book-group">
                     <div class="qt-book-header">
+                        {% with cover_filename=group.book.cover_filename, title=group.book.title, thumb_class='book-cover-thumb--quote', svg_size=18 %}
+                        {% include 'components/cover_image.html' %}
+                        {% endwith %}
                         <div class="qt-book-info">
                             <span class="qt-group-title">{{ group.book.title }}</span>
                             <span class="qt-sep">&middot;</span>
@@ -122,7 +109,9 @@
         </form>
       </div>
     </div>
+{% endblock %}
 
+{% block scripts %}
     <script>
     (function(){
         function closeOverlay(overlay){
@@ -153,5 +142,4 @@
         });
     })();
     </script>
-</body>
-</html>
+{% endblock %}

@@ -1,0 +1,19 @@
+{# Smart title field with live catalog search (BookMetadataService).
+   Optional: title_value, title_placeholder #}
+<div class="form-group form-group--title-search">
+    <label>Book Title</label>
+    <div class="book-meta-search" data-book-meta-search>
+        <div class="book-meta-search__field">
+            <input type="text"
+                   name="title"
+                   value="{{ title_value|default('') }}"
+                   placeholder="{{ title_placeholder|default('e.g. The Great Gatsby') }}"
+                   required
+                   autocomplete="off">
+            <div class="book-meta-search__results" data-book-meta-results hidden role="listbox" aria-label="Book search results"></div>
+        </div>
+        <input type="hidden" name="cover_url" value="" data-book-meta-cover-url>
+        <p class="book-meta-search__hint">Start typing a title to search catalogs — or fill in the form manually.</p>
+        <p class="book-meta-search__status" data-book-meta-status hidden aria-live="polite"></p>
+    </div>
+</div>

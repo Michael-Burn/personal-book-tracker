@@ -1,0 +1,80 @@
+{# Premium library book card.
+   Expects: book, ReadingStatus, reading_service
+   Optional: author (defaults to book.author), show_author (default true),
+             readonly (default false — hides edit/quote/delete actions),
+             book_owner (optional username label for admin views)
+#}
+{% set card_author = author if author is defined else book.author %}
+{% set status = book.reading_status or 'finished' %}
+{% set duration = reading_service.calculate_duration(book.started_reading_at, book.finished_reading_at) %}
+{% set quote_n = book.quotes|length %}
+{% set is_readonly = readonly is defined and readonly %}
+<article class="lib-card{% if is_readonly %} lib-card--readonly{% endif %}" data-status="{{ status }}" data-title="{{ book.title|lower }}" data-author="{{ card_author|lower }}">
+    <div class="lib-card-media">
+        {% with cover_filename=book.cover_filename, title=book.title, alt='Cover of ' ~ book.title, thumb_class='book-cover-thumb--card', svg_size=36 %}
+        {% include 'components/cover_image.html' %}
+        {% endwith %}
+        {% if not is_readonly %}
+        <div class="lib-card-actions" aria-label="Quick actions">
+            <a href="{{ url_for('edit', id=book.id) }}" class="lib-action lib-action--edit" title="Edit">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                <span>Edit</span>
+            </a>
+            <button type="button" class="lib-action lib-action--quote open-quote-modal"
+                    data-book-id="{{ book.id }}"
+                    data-book-title="{{ book.title }}"
+                    data-author="{{ card_author }}"
+                    title="Quotes">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                <span>Quotes{% if quote_n > 0 %} ({{ quote_n }}){% endif %}</span>
+            </button>
+            <a href="{{ url_for('delete', id=book.id) }}" class="lib-action lib-action--delete"
+               title="Delete"
+               onclick="return confirm('Are you sure you want to delete this rating?')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                <span>Delete</span>
+            </a>
+        </div>
+        {% endif %}
+    </div>
+    <div class="lib-card-body">
+        <div class="lib-card-top">
+            <h3 class="lib-card-title">{{ book.title }}</h3>
+            {% if show_author is not defined or show_author %}
+            {% if is_readonly %}
+            <span class="lib-card-author">{{ card_author }}</span>
+            {% else %}
+            <a class="lib-card-author" href="{{ url_for('author_books', author=card_author) }}">{{ card_author }}</a>
+            {% endif %}
+            {% endif %}
+            {% if book_owner is defined and book_owner %}
+            <span class="lib-card-owner">{{ book_owner }}</span>
+            {% endif %}
+        </div>
+        <div class="lib-card-meta">
+            <div class="lib-card-rating">
+                {% if book.rating and book.rating >= 1 %}
+                <span class="lib-stars" aria-label="{{ book.rating }} of 5 stars">
+                    {% for i in range(book.rating) %}★{% endfor %}{% for i in range(5 - book.rating) %}☆{% endfor %}
+                </span>
+                {% else %}
+                <span class="rating-empty">Unrated</span>
+                {% endif %}
+                {% if book.is_wild %}{% include 'components/wild_badge.html' %}{% endif %}
+            </div>
+            <div class="lib-card-chips">
+                {% include 'components/status_chip.html' %}
+                <span class="lib-quote-pill" title="Saved quotes">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    {{ quote_n }}
+                </span>
+            </div>
+            {% if duration is not none and status == 'finished' %}
+            <p class="lib-card-duration">{{ duration }} day{{ 's' if duration != 1 else '' }} to finish</p>
+            {% elif status == 'reading' and book.started_reading_at %}
+            {% set elapsed = reading_service.elapsed_days(book.started_reading_at) %}
+            <p class="lib-card-duration">Started {{ book.started_reading_at.strftime('%b %d, %Y') }}{% if elapsed %} · {{ elapsed }} day{{ 's' if elapsed != 1 else '' }}{% endif %}</p>
+            {% endif %}
+        </div>
+    </div>
+</article>

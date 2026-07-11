@@ -1,94 +1,89 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Books by {{ author }} — {{ current_user.username }}'s Library</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body class="db-body">
-    <div class="db-shell">
-        <div class="db-card">
+{% extends "base.html" %}
+
+{% block title %}Books by {{ author }} — {{ current_user.username }}'s Library{% endblock %}
+
+{% block body_class_attr %} class="db-body"{% endblock %}
+
+{% block body %}
+    <div class="db-shell db-shell--library">
+        <div class="db-card db-card--library">
 
             <!-- ── Navigation ──────────────────────────────── -->
-            <nav class="db-nav">
-                <a class="db-logo" href="{{ url_for('authors_page') }}">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-                    <span>Book Tracker</span>
-                </a>
-                <div class="db-nav-actions">
-                    <a href="{{ url_for('authors_page') }}" class="db-nav-btn">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-                        Authors
-                    </a>
-                    <a href="{{ url_for('logout') }}" class="db-nav-btn db-nav-btn--out">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                        Sign Out
-                    </a>
-                </div>
-            </nav>
+            {% set nav_variant='author' %}
+            {% include 'components/navbar.html' %}
 
-            <!-- ── Author heading + stat ────────────────────── -->
+            <!-- ── Author heading + summary ─────────────────── -->
             <div class="ab-hero">
                 <div class="ab-hero-text">
                     <p class="ab-eyebrow">Author's Library</p>
                     <h1 class="ab-title">Books by {{ author }}</h1>
+                    {% with msgs = get_flashed_messages(category_filter=['cover_error']) %}
+                    {% if msgs %}<p class="db-err" role="alert">{{ msgs[0] }}</p>{% endif %}
+                    {% endwith %}
                 </div>
                 <div class="ab-hero-right">
                     <a href="{{ url_for('add') }}?next={{ request.path }}" class="db-cta open-add-modal">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                         Rate a Book
                     </a>
-                    <div class="ab-stat">
-                        <span class="ab-stat-val">{{ author_count }}</span>
-                        <span class="ab-stat-lbl">Book{{ 's' if author_count != 1 else '' }}</span>
-                    </div>
                 </div>
             </div>
 
-            <!-- ── Book table ───────────────────────────────── -->
-            <div class="table-responsive">
-            <table class="book-table">
-            <thead>
-                <tr>
-                    <th>Title</th>
-                    <th>Rating</th>
-                    <th class="text-right">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for book in books %}
-                <tr>
-                    <td><strong>{{ book.title }}</strong></td>
-                    <td class="rating-cell">
-                        {% for i in range(book.rating) %}★{% endfor %}
-                        {% for i in range(5 - book.rating) %}☆{% endfor %}
-                    </td>
-                    <td class="text-right">
-                        <button type="button" class="quote-btn open-quote-modal"
-                                data-book-id="{{ book.id }}"
-                                data-book-title="{{ book.title }}"
-                                data-author="{{ author }}"
-                                title="Save a passage">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                            {% if book.quotes|length > 0 %}<span class="quote-count">{{ book.quotes|length }}</span>{% endif %}
-                        </button>
-                        <a href="{{ url_for('edit', id=book.id) }}" class="edit-btn">Edit</a>
-                        <a href="{{ url_for('delete', id=book.id) }}" class="delete-btn" onclick="return confirm('Are you sure you want to delete this rating?')">Delete</a>
-                    </td>
-                </tr>
+            <div class="ab-summary" aria-label="Author summary">
+                <div class="ab-stat">
+                    <span class="ab-stat-val">{{ author_count }}</span>
+                    <span class="ab-stat-lbl">Book{{ 's' if author_count != 1 else '' }}</span>
+                </div>
+                <div class="ab-stat ab-stat--rating">
+                    <span class="ab-stat-val">{% if avg_rating is not none %}{{ '%.1f'|format(avg_rating) }}{% else %}—{% endif %}</span>
+                    <span class="ab-stat-lbl">Avg Rating</span>
+                </div>
+                <div class="ab-stat ab-stat--wild">
+                    <span class="ab-stat-val">{{ wild_count }}</span>
+                    <span class="ab-stat-lbl">Wild</span>
+                </div>
+                <div class="ab-stat ab-stat--reading">
+                    <span class="ab-stat-val">{{ currently_reading_count }}</span>
+                    <span class="ab-stat-lbl">Reading</span>
+                </div>
+            </div>
+
+            <!-- ── Toolbar ──────────────────────────────────── -->
+            <div class="lib-toolbar">
+                <div class="lib-toolbar-left">
+                    <h2 class="db-section-lbl">Bookshelf</h2>
+                    <div class="ab-status-filter">
+                        <label for="bookStatusFilter" class="ab-status-filter-lbl">Status</label>
+                        <select id="bookStatusFilter" class="db-sort" aria-label="Filter books by reading status">
+                            <option value="">All statuses</option>
+                            {% for value, label in reading_statuses %}
+                            <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                {% include 'components/view_toggle.html' %}
+            </div>
+            {% with msgs = get_flashed_messages(category_filter=['book_error']) %}
+            {% if msgs %}<p class="db-err" role="alert">{{ msgs[0] }}</p>{% endif %}
+            {% endwith %}
+
+            <!-- ── Premium bookshelf ────────────────────────── -->
+            <div id="bookshelf" class="lib-shelf lib-shelf--grid" data-empty-author="{{ author }}">
+                {% for book in books|sort(attribute='date_added', reverse=true) %}
+                {% with show_author=false %}
+                {% include 'components/book_card.html' %}
+                {% endwith %}
                 {% else %}
-                <tr>
-                    <td colspan="3" class="empty-state large">
-                        <div class="empty-emoji">📚</div>
-                        <h3>No books for this author yet</h3>
-                        <p>Try adding a new rating for {{ author }}.</p>
-                    </td>
-                </tr>
+                <div class="lib-empty">
+                    <div class="db-empty-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                    </div>
+                    <h3 class="db-empty-title">No books for this author yet</h3>
+                    <p class="db-empty-sub">Try adding a new rating for {{ author }}.</p>
+                </div>
                 {% endfor %}
-            </tbody>
-        </table>
-        </div>
+            </div>
         </div><!-- /.db-card -->
     </div><!-- /.db-shell -->
 
@@ -121,26 +116,61 @@
       <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="addModalTitle">
         <button class="modal-close" aria-label="Close">×</button>
         <h2 id="addModalTitle">Rate a New Book</h2>
-        <form method="POST" action="{{ url_for('add') }}" class="rating-form">
+        <form method="POST" action="{{ url_for('add') }}" class="rating-form" enctype="multipart/form-data">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="next" value="{{ request.path }}">
-            <div class="form-group">
-                <label>Book Title</label>
-                <input type="text" name="title" placeholder="e.g. The Great Gatsby" required>
-            </div>
+            {% include 'components/book_meta_search.html' %}
             <div class="form-group">
                 <label>Author</label>
-                <input type="text" name="author" placeholder="e.g. F. Scott Fitzgerald" required>
+                <input type="text" name="author" placeholder="e.g. F. Scott Fitzgerald" value="{{ author }}" required>
             </div>
             <div class="form-group">
-                <label>My Rating</label>
-                <select name="rating">
-                    <option value="5">★★★★★ - Amazing</option>
+                <label>Reading Status</label>
+                <select name="reading_status" class="reading-status-select">
+                    {% for value, label in reading_statuses %}
+                    <option value="{{ value }}" {% if value == 'finished' %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group timeline-field timeline-field--start" data-timeline="start">
+                <label>Started Reading <span class="timeline-hint timeline-hint--recommended" hidden>(recommended)</span></label>
+                <input type="date" name="started_reading_at" class="timeline-start-input">
+            </div>
+            <div class="form-group timeline-field timeline-field--finish" data-timeline="finish">
+                <label>Finished Reading <span class="timeline-hint timeline-hint--required">(required)</span><span class="timeline-hint timeline-hint--optional" hidden>(optional)</span></label>
+                <input type="date" name="finished_reading_at" class="timeline-finish-input" required>
+            </div>
+            <div class="form-group">
+                <label>My Rating <span class="rating-optional-hint" hidden>(optional)</span></label>
+                <select name="rating" class="rating-select">
+                    <option value="">No rating yet</option>
+                    <option value="5" selected>★★★★★ - Amazing</option>
                     <option value="4">★★★★☆ - Great</option>
                     <option value="3">★★★☆☆ - Good</option>
                     <option value="2">★★☆☆☆ - Okay</option>
                     <option value="1">★☆☆☆☆ - Bad</option>
                 </select>
+            </div>
+            <div class="form-group form-group--check">
+                <label class="wild-check">
+                    <input type="checkbox" name="is_wild" value="1">
+                    <span>🔥 Wild</span>
+                </label>
+            </div>
+            <div class="form-group cover-upload">
+                <label>Upload Cover <span class="cover-upload-hint">(optional)</span></label>
+                <div class="cover-upload-row">
+                    <div class="cover-preview" id="addCoverPreview">
+                        <div class="book-cover-placeholder book-cover-placeholder--preview" id="addCoverPh">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                        </div>
+                        <img id="addCoverImg" class="cover-preview-img" alt="" hidden>
+                    </div>
+                    <div class="cover-upload-controls">
+                        <input type="file" name="cover" id="addCoverInput" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+                        <p class="cover-upload-note">JPG, PNG, or WEBP · max 5 MB</p>
+                    </div>
+                </div>
             </div>
             <div style="display:flex; gap:10px; margin-top:12px;">
                  <button type="submit" class="btn-primary">Save to Library</button>
@@ -148,7 +178,10 @@
         </form>
       </div>
     </div>
+{% endblock %}
 
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/book_metadata_search.js') }}"></script>
     <script>
         // Unified modal handler (add-book + quote modals)
         (function(){
@@ -209,7 +242,98 @@
                 }
             });
         })();
-    </script>
 
-</body>
-</html>
+        (function(){
+            var input = document.getElementById('addCoverInput');
+            var img = document.getElementById('addCoverImg');
+            var ph = document.getElementById('addCoverPh');
+            if(input){
+                input.addEventListener('change', function(){
+                    var file = input.files && input.files[0];
+                    if(!file){
+                        img.hidden = true; img.removeAttribute('src');
+                        if(ph) ph.hidden = false;
+                        return;
+                    }
+                    var url = URL.createObjectURL(file);
+                    img.onload = function(){ URL.revokeObjectURL(url); };
+                    img.src = url; img.hidden = false;
+                    if(ph) ph.hidden = true;
+                });
+            }
+        })();
+
+        (function(){
+            var filter = document.getElementById('bookStatusFilter');
+            var cards = document.querySelectorAll('#bookshelf .lib-card');
+            if(!filter) return;
+            filter.addEventListener('change', function(){
+                var status = filter.value;
+                cards.forEach(function(card){
+                    card.hidden = !!(status && card.getAttribute('data-status') !== status);
+                });
+            });
+        })();
+
+        (function(){
+            var KEY = 'kwalitec-library-view';
+            var shelf = document.getElementById('bookshelf');
+            var toggle = document.getElementById('viewToggle');
+            if(!shelf || !toggle) return;
+            function apply(view){
+                view = view === 'list' ? 'list' : 'grid';
+                shelf.classList.remove('lib-shelf--grid', 'lib-shelf--list');
+                shelf.classList.add('lib-shelf--' + view);
+                toggle.querySelectorAll('.lib-view-btn').forEach(function(btn){
+                    var on = btn.getAttribute('data-view') === view;
+                    btn.classList.toggle('is-active', on);
+                    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+                });
+                try { localStorage.setItem(KEY, view); } catch(e) {}
+            }
+            var saved = 'grid';
+            try { saved = localStorage.getItem(KEY) || 'grid'; } catch(e) {}
+            apply(saved);
+            toggle.addEventListener('click', function(e){
+                var btn = e.target.closest('.lib-view-btn');
+                if(!btn) return;
+                apply(btn.getAttribute('data-view'));
+            });
+        })();
+
+        document.querySelectorAll('.reading-status-select').forEach(function(statusEl){
+            var form = statusEl.closest('form');
+            if(!form) return;
+            var ratingEl = form.querySelector('.rating-select');
+            var hint = form.querySelector('.rating-optional-hint');
+            var startField = form.querySelector('.timeline-field--start');
+            var finishField = form.querySelector('.timeline-field--finish');
+            var finishInput = form.querySelector('.timeline-finish-input');
+            var startRec = form.querySelector('.timeline-hint--recommended');
+            var finishReq = form.querySelector('.timeline-hint--required');
+            var finishOpt = form.querySelector('.timeline-hint--optional');
+            var showStart = {want_to_read:1, reading:1, finished:1, dnf:1, rereading:1};
+            var showFinish = {want_to_read:1, finished:1, dnf:1, rereading:1};
+            function apply(){
+                var status = statusEl.value;
+                var finished = status === 'finished';
+                if(ratingEl){
+                    ratingEl.required = finished;
+                    if(finished && !ratingEl.value) ratingEl.value = '5';
+                }
+                if(hint) hint.hidden = finished;
+                if(startField) startField.hidden = !showStart[status];
+                if(finishField) finishField.hidden = !showFinish[status];
+                if(finishInput) finishInput.required = finished;
+                if(startRec) startRec.hidden = status !== 'reading';
+                if(finishReq) finishReq.hidden = !finished;
+                if(finishOpt) finishOpt.hidden = finished || !showFinish[status];
+            }
+            statusEl.addEventListener('change', apply);
+            apply();
+        });
+    </script>
+    <script>
+    if (window.BookMetaSearch) { BookMetaSearch.initAll(); }
+    </script>
+{% endblock %}

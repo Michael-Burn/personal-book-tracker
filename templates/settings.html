@@ -1,25 +1,17 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Change Password — Book Tracker</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body class="sett-body">
+{% extends "base.html" %}
+
+{% block title %}Change Password — Book Tracker{% endblock %}
+
+{% block charset %}utf-8{% endblock %}
+
+{% block body_class_attr %} class="sett-body"{% endblock %}
+
+{% block body %}
 <div class="sett-wrap">
 
     <!-- Nav -->
-    <nav class="sett-nav">
-        <a href="{{ url_for('authors_page') }}" class="sett-nav-back">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-            My Library
-        </a>
-        <span class="sett-nav-title">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
-            Change Password
-        </span>
-    </nav>
+    {% set nav_variant='settings' %}
+    {% include 'components/navbar.html' %}
 
     <!-- ── Change Password panel ──────────────────────────── -->
     <section class="sett-panel">
@@ -56,9 +48,6 @@
         </div>
     </section>
 
-</div>
-</body>
-</html>
     <section class="sett-panel">
         <div class="sett-panel-info">
             <div class="sett-panel-icon sett-icon--teal">
@@ -114,5 +103,4 @@
     </section>
 
 </div>
-</body>
-</html>
+{% endblock %}

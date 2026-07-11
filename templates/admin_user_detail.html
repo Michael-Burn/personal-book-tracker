@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+
+{% block title %}{{ profile_user.username }} — Admin Hub{% endblock %}
+
+{% block extra_head %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block body_class_attr %} class="hub-body"{% endblock %}
+
+{% block body %}
+<div class="hub-wrap">
+    {% set nav_variant='admin' %}
+    {% include 'components/navbar.html' %}
+
+    {% for msg in flash_errors %}
+    <div class="alert-error hub-flash">{{ msg }}</div>
+    {% endfor %}
+    {% for msg in flash_messages %}
+    <div class="alert-success hub-flash">{{ msg }}</div>
+    {% endfor %}
+
+    <div class="hub-profile-header">
+        <div class="hub-profile-identity">
+            <div class="admin-avatar admin-avatar--lg">
+                {% if profile_user.avatar %}
+                <img src="{{ profile_user.avatar }}" alt="{{ profile_user.username[0]|upper }}">
+                {% else %}
+                <span>{{ profile_user.username[0]|upper }}</span>
+                {% endif %}
+            </div>
+            <div>
+                <p class="ab-eyebrow">User detail</p>
+                <h1 class="hub-page-title">{{ profile_user.username }}</h1>
+                <p class="hub-page-sub">
+                    Joined {{ profile_user.created_at.strftime('%b %d, %Y') }}
+                    ·
+                    {% if profile_user.is_active %}
+                    <span class="admin-badge admin-badge--active">Active</span>
+                    {% else %}
+                    <span class="admin-badge admin-badge--inactive">Disabled</span>
+                    {% endif %}
+                    {% if profile_user.username == 'Admin' %}
+                    <span class="admin-badge admin-badge--admin">Admin</span>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+        <div class="hub-profile-actions">
+            <a href="{{ url_for('admin_explorer') }}" class="hub-back">← Users</a>
+            {% if profile_user.id != current_user.id %}
+            <form method="POST" action="{{ url_for('admin_toggle_active', user_id=profile_user.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="next" value="{{ url_for('admin_user_detail', user_id=profile_user.id) }}">
+                <button type="submit" class="admin-btn {% if profile_user.is_active %}admin-btn--warn{% else %}admin-btn--ok{% endif %}">
+                    {% if profile_user.is_active %}Disable{% else %}Enable{% endif %}
+                </button>
+            </form>
+            <form method="POST" action="{{ url_for('admin_delete_user', user_id=profile_user.id) }}"
+                  onsubmit="return confirm('Delete {{ profile_user.username }} and all their data? This cannot be undone.')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="next" value="{{ url_for('admin_explorer') }}">
+                <button type="submit" class="admin-btn admin-btn--danger">Delete</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Statistics (reuse reading dashboard KPIs) -->
+    <div class="hub-section-title">Statistics</div>
+    <div class="rs-kpi-row hub-rs-kpi" aria-label="User reading statistics">
+        <div class="rs-kpi-card rs-kpi-card--finished">
+            <div class="rs-kpi-val">{{ kpis.books_finished }}</div>
+            <div class="rs-kpi-lbl">Books Finished</div>
+        </div>
+        <div class="rs-kpi-card rs-kpi-card--reading">
+            <div class="rs-kpi-val">{{ kpis.currently_reading }}</div>
+            <div class="rs-kpi-lbl">Currently Reading</div>
+        </div>
+        <div class="rs-kpi-card rs-kpi-card--want">
+            <div class="rs-kpi-val">{{ kpis.want_to_read }}</div>
+            <div class="rs-kpi-lbl">Want To Read</div>
+        </div>
+        <div class="rs-kpi-card rs-kpi-card--rating">
+            <div class="rs-kpi-val">{% if kpis.average_rating_display %}{{ kpis.average_rating_display }}{% else %}—{% endif %}</div>
+            <div class="rs-kpi-lbl">Average Rating</div>
+        </div>
+        <div class="rs-kpi-card rs-kpi-card--wild">
+            <div class="rs-kpi-val">{{ kpis.wild_books }}</div>
+            <div class="rs-kpi-lbl">Wild Books</div>
+        </div>
+        <div class="rs-kpi-card rs-kpi-card--author">
+            <div class="rs-kpi-val rs-kpi-val--text">{% if kpis.favourite_author %}{{ kpis.favourite_author }}{% else %}—{% endif %}</div>
+            <div class="rs-kpi-lbl">Favourite Author</div>
+        </div>
+    </div>
+
+    {% if not is_empty %}
+    <div class="hub-charts-row">
+        <div class="hub-chart-panel">
+            <div class="hub-panel-header">Finished per month</div>
+            <canvas id="finishedChart" height="180"></canvas>
+        </div>
+        <div class="hub-chart-panel">
+            <div class="hub-panel-header">Rating distribution</div>
+            <canvas id="ratingChart" height="180"></canvas>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Activity -->
+    <div class="hub-section-title">Activity</div>
+    <section class="timeline-panel timeline-panel--activity hub-activity" aria-label="Recent activity">
+        {% if recent_activity %}
+        <ul class="timeline-list">
+            {% for event in recent_activity %}
+            <li class="timeline-item timeline-item--{{ event.kind }}">
+                <div class="timeline-item-main">
+                    <span class="timeline-item-kind">
+                        {% if event.kind == 'finished' %}Finished Reading
+                        {% elif event.kind == 'started' %}Started Reading
+                        {% elif event.kind == 'added' %}Book Added
+                        {% elif event.kind == 'wild' %}Marked Wild
+                        {% else %}{{ event.kind }}{% endif %}
+                    </span>
+                    <span class="timeline-item-title">{{ event.book.title }}</span>
+                    <span class="timeline-item-sub">{{ event.book.author }}</span>
+                </div>
+                <div class="timeline-item-meta">
+                    <span class="timeline-item-date">{{ event.event_date.strftime('%b %d, %Y') }}</span>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="timeline-empty">No recent activity for this user.</p>
+        {% endif %}
+    </section>
+
+    <!-- Books -->
+    <div class="hub-section-title">Books <span class="hub-section-count">{{ books|length }}</span></div>
+    {% if books %}
+    <div class="lib-grid hub-lib-grid">
+        {% for book in books %}
+        {% with readonly=true %}
+        {% include 'components/book_card.html' %}
+        {% endwith %}
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="hub-empty">This user has no books yet.</p>
+    {% endif %}
+
+    <!-- Quotes -->
+    <div class="hub-section-title">Quotes <span class="hub-section-count">{{ quote_count }}</span></div>
+    {% if quote_groups %}
+    <div class="qt-list hub-qt-list">
+        {% for group in quote_groups %}
+        <div class="qt-book-group">
+            <div class="qt-book-header">
+                {% with cover_filename=group.book.cover_filename, title=group.book.title, thumb_class='book-cover-thumb--quote', svg_size=18 %}
+                {% include 'components/cover_image.html' %}
+                {% endwith %}
+                <div class="qt-book-info">
+                    <span class="qt-group-title">{{ group.book.title }}</span>
+                    <span class="qt-sep">&middot;</span>
+                    <span class="qt-group-author">{{ group.book.author }}</span>
+                </div>
+                <span class="qt-group-count">{{ group.quotes|length }} passage{{ 's' if group.quotes|length != 1 else '' }}</span>
+            </div>
+            <div class="qt-group-quotes">
+                {% for q in group.quotes %}
+                <div class="qt-entry">
+                    <div class="qt-entry-body">
+                        <svg class="qt-mark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/></svg>
+                        <p class="qt-text">{{ q.text }}</p>
+                    </div>
+                    <div class="qt-entry-meta">
+                        <span class="qt-date">{{ q.date_added.strftime('%b %d, %Y') }}</span>
+                        {% if q.page_ref %}<span class="qt-sep">&middot;</span><span class="qt-page">{{ q.page_ref }}</span>{% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="hub-empty">This user has no saved quotes.</p>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if not is_empty %}
+<script>
+const PRIMARY   = '#6C63FF';
+const PRIMARY_L = 'rgba(108,99,255,0.15)';
+const GRID      = 'rgba(0,0,0,0.06)';
+const TEXT      = '#6B7280';
+Chart.defaults.font.family = "'Inter', ui-sans-serif, system-ui, sans-serif";
+Chart.defaults.color = TEXT;
+
+new Chart(document.getElementById('finishedChart'), {
+    type: 'line',
+    data: {
+        labels: {{ charts.finished_per_month.labels_js | safe }},
+        datasets: [{
+            label: 'Finished',
+            data: {{ charts.finished_per_month.data_js | safe }},
+            borderColor: PRIMARY,
+            backgroundColor: PRIMARY_L,
+            borderWidth: 2,
+            pointRadius: 3,
+            fill: true,
+            tension: 0.35,
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+            x: { grid: { color: GRID } },
+            y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, grid: { color: GRID } }
+        }
+    }
+});
+
+new Chart(document.getElementById('ratingChart'), {
+    type: 'bar',
+    data: {
+        labels: {{ charts.rating_distribution.labels_js | safe }},
+        datasets: [{
+            label: 'Books',
+            data: {{ charts.rating_distribution.data_js | safe }},
+            backgroundColor: PRIMARY_L,
+            borderColor: PRIMARY,
+            borderWidth: 1.5,
+            borderRadius: 6,
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+            x: { grid: { display: false } },
+            y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, grid: { color: GRID } }
+        }
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

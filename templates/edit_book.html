@@ -1,29 +1,187 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Edit Rating</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-    <div class="container">
+{% extends "base.html" %}
+
+{% block html_attrs %}{% endblock %}
+
+{% block title %}Edit Rating{% endblock %}
+
+{% block body %}
+    <div class="container narrow">
         <h1>Edit: {{ book.title }}</h1>
-        <form method="POST">
+
+        {% set cover_errors = get_flashed_messages(category_filter=['cover_error']) %}
+        {% set book_errors = get_flashed_messages(category_filter=['book_error']) %}
+        {% if cover_errors %}
+        <div class="form-error" role="alert">{{ cover_errors[0] }}</div>
+        {% endif %}
+        {% if book_errors %}
+        <div class="form-error" role="alert">{{ book_errors[0] }}</div>
+        {% endif %}
+
+        <form method="POST" class="rating-form" enctype="multipart/form-data">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="text" name="title" value="{{ book.title }}" required>
-            <input type="text" name="author" value="{{ book.author }}" required>
-            
-            <label>Rating (1-5):</label>
-            <select name="rating">
-                {% for i in range(1, 6) %}
-                <option value="{{ i }}" {% if book.rating == i %}selected{% endif %}>{{ i }}</option>
-                {% endfor %}
-            </select>
-            
-            <button type="submit" class="btn-primary">Update Rating</button>
+            <div class="form-group">
+                <label>Book Title</label>
+                <input type="text" name="title" value="{{ book.title }}" required>
+            </div>
+            <div class="form-group">
+                <label>Author</label>
+                <input type="text" name="author" value="{{ book.author }}" required>
+            </div>
+
+            <div class="form-group">
+                <label>Reading Status</label>
+                <select name="reading_status" class="reading-status-select">
+                    {% for value, label in reading_statuses %}
+                    <option value="{{ value }}" {% if book.reading_status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group timeline-field timeline-field--start" data-timeline="start"{% if not reading_service.should_show_start_date(book.reading_status or 'finished') %} hidden{% endif %}>
+                <label>Started Reading <span class="timeline-hint timeline-hint--recommended"{% if (book.reading_status or 'finished') != 'reading' %} hidden{% endif %}>(recommended)</span></label>
+                <input type="date" name="started_reading_at" class="timeline-start-input"
+                       value="{{ book.started_reading_at.isoformat() if book.started_reading_at else '' }}">
+            </div>
+
+            <div class="form-group timeline-field timeline-field--finish" data-timeline="finish"{% if not reading_service.should_show_finish_date(book.reading_status or 'finished') %} hidden{% endif %}>
+                <label>Finished Reading <span class="timeline-hint timeline-hint--required"{% if (book.reading_status or 'finished') != 'finished' %} hidden{% endif %}>(required)</span><span class="timeline-hint timeline-hint--optional"{% if (book.reading_status or 'finished') == 'finished' or not reading_service.should_show_finish_date(book.reading_status or 'finished') %} hidden{% endif %}>(optional)</span></label>
+                <input type="date" name="finished_reading_at" class="timeline-finish-input"
+                       value="{{ book.finished_reading_at.isoformat() if book.finished_reading_at else '' }}"
+                       {% if (book.reading_status or 'finished') == 'finished' %}required{% endif %}>
+            </div>
+
+            {% set duration = reading_service.calculate_duration(book.started_reading_at, book.finished_reading_at) %}
+            {% if duration %}
+            <p class="timeline-duration" aria-live="polite">
+                Reading duration: <strong>{{ duration }} day{{ 's' if duration != 1 else '' }}</strong>
+            </p>
+            {% endif %}
+
+            <div class="form-group">
+                <label>Rating (1-5) <span class="rating-optional-hint" hidden>(optional)</span></label>
+                <select name="rating" class="rating-select">
+                    <option value="" {% if not book.rating or book.rating < 1 %}selected{% endif %}>No rating yet</option>
+                    {% for i in range(1, 6) %}
+                    <option value="{{ i }}" {% if book.rating == i %}selected{% endif %}>{{ i }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group form-group--check">
+                <label class="wild-check">
+                    <input type="checkbox" name="is_wild" value="1" {% if book.is_wild %}checked{% endif %}>
+                    <span>🔥 Wild</span>
+                </label>
+            </div>
+
+            <div class="form-group cover-upload">
+                <label>Cover</label>
+                <div class="cover-upload-row">
+                    <div class="cover-preview" id="coverPreview">
+                        {% if book.cover_filename %}
+                        <img id="coverPreviewImg" class="cover-preview-img" alt="Current cover"
+                             src="{{ url_for('serve_book_cover', filename=book.cover_filename) }}">
+                        {% else %}
+                        <div class="book-cover-placeholder book-cover-placeholder--preview" id="coverPlaceholder">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                        </div>
+                        <img id="coverPreviewImg" class="cover-preview-img" alt="" hidden>
+                        {% endif %}
+                    </div>
+                    <div class="cover-upload-controls">
+                        <label class="cover-file-label" for="coverInput">
+                            {% if book.cover_filename %}Replace Cover{% else %}Upload Cover{% endif %}
+                        </label>
+                        <input type="file" name="cover" id="coverInput" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+                        <p class="cover-upload-note">JPG, PNG, or WEBP · max 5 MB</p>
+                        {% if book.cover_filename %}
+                        <label class="wild-check cover-remove-check">
+                            <input type="checkbox" name="remove_cover" value="1" id="removeCover">
+                            <span>Remove Cover</span>
+                        </label>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-primary">Update Book</button>
         </form>
         <br>
-        <a href="/authors" class="back-link">Cancel</a>
+        <a href="{{ url_for('authors_page') }}" class="back-link">Cancel</a>
     </div>
-</body>
-</html>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+    (function(){
+        var input = document.getElementById('coverInput');
+        var img = document.getElementById('coverPreviewImg');
+        var ph = document.getElementById('coverPlaceholder');
+        var remove = document.getElementById('removeCover');
+        if(input){
+            input.addEventListener('change', function(){
+                var file = input.files && input.files[0];
+                if(!file) return;
+                if(remove) remove.checked = false;
+                var url = URL.createObjectURL(file);
+                img.onload = function(){ URL.revokeObjectURL(url); };
+                img.src = url; img.hidden = false;
+                if(ph) ph.hidden = true;
+            });
+        }
+        if(remove){
+            remove.addEventListener('change', function(){
+                if(remove.checked){
+                    input.value = '';
+                    if(img){ img.hidden = true; }
+                    if(ph){ ph.hidden = false; }
+                    else {
+                        var preview = document.getElementById('coverPreview');
+                        if(preview && img){
+                            img.hidden = true;
+                            if(!document.getElementById('coverPlaceholder')){
+                                var el = document.createElement('div');
+                                el.className = 'book-cover-placeholder book-cover-placeholder--preview';
+                                el.id = 'coverPlaceholder';
+                                el.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>';
+                                preview.insertBefore(el, img);
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        document.querySelectorAll('.reading-status-select').forEach(function(statusEl){
+            var form = statusEl.closest('form');
+            if(!form) return;
+            var ratingEl = form.querySelector('.rating-select');
+            var hint = form.querySelector('.rating-optional-hint');
+            var startField = form.querySelector('.timeline-field--start');
+            var finishField = form.querySelector('.timeline-field--finish');
+            var finishInput = form.querySelector('.timeline-finish-input');
+            var startRec = form.querySelector('.timeline-hint--recommended');
+            var finishReq = form.querySelector('.timeline-hint--required');
+            var finishOpt = form.querySelector('.timeline-hint--optional');
+            var showStart = {want_to_read:1, reading:1, finished:1, dnf:1, rereading:1};
+            var showFinish = {want_to_read:1, finished:1, dnf:1, rereading:1};
+            function apply(){
+                var status = statusEl.value;
+                var finished = status === 'finished';
+                if(ratingEl){
+                    ratingEl.required = finished;
+                    if(finished && !ratingEl.value) ratingEl.value = '5';
+                }
+                if(hint) hint.hidden = finished;
+                if(startField) startField.hidden = !showStart[status];
+                if(finishField) finishField.hidden = !showFinish[status];
+                if(finishInput) finishInput.required = finished;
+                if(startRec) startRec.hidden = status !== 'reading';
+                if(finishReq) finishReq.hidden = !finished;
+                if(finishOpt) finishOpt.hidden = finished || !showFinish[status];
+            }
+            statusEl.addEventListener('change', apply);
+            apply();
+        });
+    })();
+    </script>
+{% endblock %}

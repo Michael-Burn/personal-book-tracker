@@ -1,15 +1,18 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ profile_user.username }}'s Top Picks — Book Tracker</title>
+{% extends "base.html" %}
+
+{% block title %}{{ profile_user.username }}'s Top Picks — Book Tracker{% endblock %}
+
+{% block charset %}utf-8{% endblock %}
+
+{% block extra_head %}
     <meta property="og:title" content="{{ profile_user.username }}'s Top Book Picks">
     <meta property="og:description" content="See {{ profile_user.username }}'s top-rated authors and books on Book Tracker.">
     <meta property="og:type" content="website">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body class="sp-body">
+{% endblock %}
+
+{% block body_class_attr %} class="sp-body"{% endblock %}
+
+{% block body %}
     <div class="sp-shell">
         <div class="sp-card">
 
@@ -155,12 +158,16 @@
                     {% for book in books %}
                     <li class="sp-rank-item">
                         <div class="sp-rank-num" aria-label="Rank {{ loop.index }}">{{ loop.index }}</div>
+                        {% with cover_filename=book.cover_filename, title=book.title, thumb_class='book-cover-thumb--share', svg_size=18 %}
+                        {% include 'components/cover_image.html' %}
+                        {% endwith %}
                         <div class="sp-rank-body">
                             <div class="sp-rank-name">{{ book.title }}</div>
                             <div class="sp-rank-meta">
                                 <span class="sp-stars" aria-label="{{ book.rating }} out of 5 stars">
-                                    {% for _ in range(book.rating) %}★{% endfor %}{% for _ in range(5 - book.rating) %}☆{% endfor %}
+                                    {% for _ in range(book.rating or 0) %}★{% endfor %}{% for _ in range(5 - (book.rating or 0)) %}☆{% endfor %}
                                 </span>
+                                {% if book.is_wild %}{% include 'components/wild_badge.html' %}{% endif %}
                                 <span class="sp-meta-sep" aria-hidden="true">·</span>
                                 <span>by {{ book.author }}</span>
                             </div>
@@ -218,7 +225,9 @@
 
         </div><!-- /.sp-card -->
     </div><!-- /.sp-shell -->
+{% endblock %}
 
+{% block scripts %}
     <script>
     (function () {
         var btn = document.getElementById('copyLinkBtn');
@@ -252,5 +261,4 @@
         }
     })();
     </script>
-</body>
-</html>
+{% endblock %}

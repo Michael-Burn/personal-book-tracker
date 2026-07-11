@@ -1,31 +1,19 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Admin Hub — Book Tracker</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+{% extends "base.html" %}
+
+{% block title %}Admin Hub — Book Tracker{% endblock %}
+
+{% block extra_head %}
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
-</head>
-<body class="hub-body">
+{% endblock %}
+
+{% block body_class_attr %} class="hub-body"{% endblock %}
+
+{% block body %}
 <div class="hub-wrap">
 
     <!-- ── Nav ───────────────────────────────────────────── -->
-    <nav class="hub-nav">
-        <div class="hub-nav-brand">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            Admin Hub
-        </div>
-        <div class="hub-nav-actions">
-            <button class="hub-icon-btn" id="openUserMgmt" title="Manage Users" onclick="document.getElementById('userMgmtModal').classList.add('open')">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            </button>
-            <a href="{{ url_for('logout') }}" class="hub-back">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                Sign Out
-            </a>
-        </div>
-    </nav>
+    {% set nav_variant='admin' %}
+    {% include 'components/navbar.html' %}
 
     <!-- ── Flash messages ────────────────────────────────── -->
     {% for msg in flash_errors %}
@@ -45,20 +33,6 @@
             <div class="hub-kpi-lbl">Total Users</div>
         </div>
         <div class="hub-kpi-card">
-            <div class="hub-kpi-icon hub-kpi-icon--green">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-            </div>
-            <div class="hub-kpi-val">{{ active_users }}</div>
-            <div class="hub-kpi-lbl">Active</div>
-        </div>
-        <div class="hub-kpi-card {% if disabled_users > 0 %}hub-kpi-card--warn{% endif %}">
-            <div class="hub-kpi-icon hub-kpi-icon--orange">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
-            </div>
-            <div class="hub-kpi-val">{{ disabled_users }}</div>
-            <div class="hub-kpi-lbl">Disabled</div>
-        </div>
-        <div class="hub-kpi-card">
             <div class="hub-kpi-icon hub-kpi-icon--purple">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
             </div>
@@ -72,6 +46,33 @@
             <div class="hub-kpi-val">{{ total_quotes }}</div>
             <div class="hub-kpi-lbl">Total Quotes</div>
         </div>
+        <div class="hub-kpi-card">
+            <div class="hub-kpi-icon hub-kpi-icon--orange">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1.5-3-1-1.5-1-3.5 0-5C6 7 5 9.5 5 12a5 5 0 0 0 10 0c0-2-1-3.5-2-4.5"/><path d="M12 19c1.5 0 2.5-1 2.5-2.5"/></svg>
+            </div>
+            <div class="hub-kpi-val">{{ wild_count }}</div>
+            <div class="hub-kpi-lbl">Wild Books</div>
+        </div>
+        <div class="hub-kpi-card">
+            <div class="hub-kpi-icon hub-kpi-icon--green">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            </div>
+            <div class="hub-kpi-val">{{ currently_reading }}</div>
+            <div class="hub-kpi-lbl">Currently Reading</div>
+        </div>
+        <div class="hub-kpi-card">
+            <div class="hub-kpi-icon hub-kpi-icon--blue">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </div>
+            <div class="hub-kpi-val">{{ books_added_this_week }}</div>
+            <div class="hub-kpi-lbl">Added This Week</div>
+        </div>
+    </div>
+
+    <div class="hub-kpi-meta">
+        <span>{{ active_users }} active</span>
+        <span class="hub-kpi-meta-sep">·</span>
+        <span class="{% if disabled_users > 0 %}hub-kpi-meta--warn{% endif %}">{{ disabled_users }} disabled</span>
     </div>
 
     <!-- ── Charts row ────────────────────────────────────── -->
@@ -149,7 +150,7 @@
             <div class="hub-spotlight-icon">🏆</div>
             <div>
                 <div class="hub-spotlight-label">Most Active Reader</div>
-                <div class="hub-spotlight-name">{{ most_active.username }}</div>
+                <div class="hub-spotlight-name"><a href="{{ url_for('admin_user_detail', user_id=most_active.id) }}">{{ most_active.username }}</a></div>
                 <div class="hub-spotlight-sub">{{ most_active.books|length }} book{{ 's' if most_active.books|length != 1 else '' }}</div>
             </div>
         </div>
@@ -159,7 +160,7 @@
             <div class="hub-spotlight-icon">🆕</div>
             <div>
                 <div class="hub-spotlight-label">Newest Member</div>
-                <div class="hub-spotlight-name">{{ newest_user.username }}</div>
+                <div class="hub-spotlight-name"><a href="{{ url_for('admin_user_detail', user_id=newest_user.id) }}">{{ newest_user.username }}</a></div>
                 <div class="hub-spotlight-sub">Joined {{ newest_user.created_at.strftime('%b %d, %Y') }}</div>
             </div>
         </div>
@@ -227,7 +228,7 @@
                                 <span>{{ user.username[0]|upper }}</span>
                                 {% endif %}
                             </div>
-                            <span class="admin-username">{{ user.username }}</span>
+                            <span class="admin-username"><a href="{{ url_for('admin_user_detail', user_id=user.id) }}">{{ user.username }}</a></span>
                             {% if user.id == current_user.id %}
                             <span class="admin-badge admin-badge--you">you</span>
                             {% endif %}
@@ -274,7 +275,9 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block scripts %}
 <script>
 const PRIMARY   = '#6C63FF';
 const PRIMARY_L = 'rgba(108,99,255,0.15)';
@@ -334,5 +337,4 @@ new Chart(document.getElementById('usersChart'), {
     }
 });
 </script>
-</body>
-</html>
+{% endblock %}

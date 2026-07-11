@@ -1,7 +1,39 @@
-instance/books.db
-instance/__pycache__/
-*.pyc
-.env
+# ==========================
+# Python
+# ==========================
+__pycache__/
+*.py[cod]
+
+# Virtual environments
 venv/
 .venv/
-__pycache__/
+
+# Environment variables
+.env
+
+# ==========================
+# Flask
+# ==========================
+instance/
+!instance/.gitkeep
+
+# ==========================
+# User uploads
+# ==========================
+uploads/*
+!uploads/books/
+!uploads/books/.gitkeep
+uploads/books/*
+
+!uploads/avatars/
+!uploads/avatars/.gitkeep
+uploads/avatars/*
+
+!uploads/authors/
+!uploads/authors/.gitkeep
+uploads/authors/*
+
+# ==========================
+# macOS
+# ==========================
+.DS_Store

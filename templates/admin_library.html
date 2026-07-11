@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Global Library — Admin Hub{% endblock %}
+
+{% block body_class_attr %} class="hub-body"{% endblock %}
+
+{% block body %}
+<div class="hub-wrap">
+    {% set nav_variant='admin' %}
+    {% include 'components/navbar.html' %}
+
+    <div class="hub-page-header">
+        <div>
+            <h1 class="hub-page-title">Global Library</h1>
+            <p class="hub-page-sub">Browse every book in the system with user, author, status, rating, and wild filters.</p>
+        </div>
+        <span class="hub-page-count">{{ total_matched }} book{{ 's' if total_matched != 1 else '' }}</span>
+    </div>
+
+    <form class="hub-toolbar hub-toolbar--wrap" method="GET" action="{{ url_for('admin_library') }}">
+        <label class="hub-toolbar-field">
+            <span>User</span>
+            <select name="user_id" class="hub-select">
+                <option value="">All users</option>
+                {% for u in users %}
+                <option value="{{ u.id }}" {% if filter_user_id == u.id %}selected{% endif %}>{{ u.username }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label class="hub-toolbar-field">
+            <span>Author</span>
+            <input type="text" name="author" value="{{ filter_author }}" list="authorSuggestions" class="hub-input" placeholder="Any author" autocomplete="off">
+            <datalist id="authorSuggestions">
+                {% for a in authors %}
+                <option value="{{ a }}">
+                {% endfor %}
+            </datalist>
+        </label>
+        <label class="hub-toolbar-field">
+            <span>Status</span>
+            <select name="status" class="hub-select">
+                <option value="">All statuses</option>
+                {% for value, label in reading_statuses %}
+                <option value="{{ value }}" {% if filter_status == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label class="hub-toolbar-field">
+            <span>Rating</span>
+            <select name="rating" class="hub-select">
+                <option value="">Any</option>
+                {% for r in range(5, 0, -1) %}
+                <option value="{{ r }}" {% if filter_rating == r %}selected{% endif %}>{{ r }} ★</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label class="hub-toolbar-field">
+            <span>Wild</span>
+            <select name="wild" class="hub-select">
+                <option value="" {% if not filter_wild %}selected{% endif %}>Any</option>
+                <option value="1" {% if filter_wild in ['1', 'true', 'yes'] %}selected{% endif %}>Wild only</option>
+                <option value="0" {% if filter_wild in ['0', 'false', 'no'] %}selected{% endif %}>Not wild</option>
+            </select>
+        </label>
+        <button type="submit" class="admin-btn admin-btn--secondary">Filter</button>
+        <a href="{{ url_for('admin_library') }}" class="hub-toolbar-clear">Reset</a>
+    </form>
+
+    {% if books %}
+    <div class="lib-grid hub-lib-grid">
+        {% for book in books %}
+        {% set owner_name = book.owner.username if book.owner else 'Unassigned' %}
+        {% with readonly=true, book_owner=owner_name %}
+        {% include 'components/book_card.html' %}
+        {% endwith %}
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="hub-empty">No books match these filters.</p>
+    {% endif %}
+</div>
+{% endblock %}

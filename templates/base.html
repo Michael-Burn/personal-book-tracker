@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html{%- block html_attrs %} lang="en"{% endblock %}>
+<head>
+    <meta charset="{% block charset %}UTF-8{% endblock %}">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Book Tracker{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body{% block body_attrs %}{% endblock %}{% block body_class_attr %}{% endblock %}>
+{% block body %}{% endblock %}
+{% block scripts %}{% endblock %}
+</body>
+</html>

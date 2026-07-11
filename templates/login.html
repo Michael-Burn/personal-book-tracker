@@ -1,12 +1,14 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Sign In — Kwalitec Library</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body class="login-body">
+{% extends "base.html" %}
+
+{% block html_attrs %}{% endblock %}
+
+{% block title %}Sign In — Kwalitec Library{% endblock %}
+
+{% block charset %}utf-8{% endblock %}
+
+{% block body_class_attr %} class="login-body"{% endblock %}
+
+{% block body %}
   <div class="login-outer">
     <div class="login-split">
 
@@ -99,5 +101,4 @@
 
     </div>
   </div>
-</body>
-</html>
+{% endblock %}

@@ -1,12 +1,11 @@
 import os
 import re
 import io
-import json
 import random
 import math
 import secrets
-from collections import defaultdict
-from datetime import datetime, timedelta
+import sys
+from datetime import datetime
 from functools import wraps
 
 try:
@@ -15,11 +14,12 @@ try:
 except ImportError:
     pass
 
-from flask import Flask, render_template, request, redirect, url_for, abort, send_file, flash, jsonify, get_flashed_messages, session
+from flask import Flask, render_template, request, redirect, url_for, abort, send_file, send_from_directory, flash, jsonify, get_flashed_messages, session
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
 import sqlalchemy as sa
+from sqlalchemy.orm import selectinload
 from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect
 from flask_talisman import Talisman
@@ -28,12 +28,48 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
+# Media service lives under app/services/ (no app/__init__.py so this app.py
+# module is not shadowed — gunicorn app:app / FLASK_APP=app.py keep working).
+_APP_SERVICES_PARENT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'app')
+if _APP_SERVICES_PARENT not in sys.path:
+    sys.path.insert(0, _APP_SERVICES_PARENT)
+from services.media_service import MediaService, MediaValidationError  # noqa: E402
+from services.reading_service import ReadingService  # noqa: E402
+from services.statistics_service import StatisticsService  # noqa: E402
+from services.share_engine import ShareEngine, ShareFormat  # noqa: E402
+from services.book_metadata_service import BookMetadataService  # noqa: E402
+from domain.reading_status import ReadingStatus  # noqa: E402
+from config.media_settings import MediaSettings  # noqa: E402
+from utils import has_rating, since_date, safe_next_url  # noqa: E402
+
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///instance/books.db')
+_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+_DEFAULT_SQLITE = 'sqlite:///' + os.path.join(_BASE_DIR, 'instance', 'books.db').replace('\\', '/')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', _DEFAULT_SQLITE)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret')
+
+# Centralized media / upload settings (override via env or Flask config)
+_media_settings = MediaSettings.from_mapping({
+    'UPLOAD_ROOT': os.environ.get('UPLOAD_ROOT'),
+    'MEDIA_COVER_MAX_BYTES': os.environ.get('MEDIA_COVER_MAX_BYTES'),
+    'MEDIA_COVER_MAX_EDGE': os.environ.get('MEDIA_COVER_MAX_EDGE'),
+    'MEDIA_AVATAR_MAX_BYTES': os.environ.get('MEDIA_AVATAR_MAX_BYTES'),
+})
+app.config['UPLOAD_ROOT'] = str(_media_settings.upload_root)
+app.config['MEDIA_COVER_MAX_BYTES'] = _media_settings.cover_max_bytes
+app.config['MEDIA_AVATAR_MAX_BYTES'] = _media_settings.avatar_max_bytes
+app.config['MAX_CONTENT_LENGTH'] = _media_settings.cover_max_bytes
+
+media_service = MediaService(settings=_media_settings)
+reading_service = ReadingService()
+statistics_service = StatisticsService()
+book_metadata_service = BookMetadataService()
+share_engine = ShareEngine(
+    cover_resolver=media_service.resolve_book_cover_path,
+)
 
 # In production (Render sets RENDER=true, or DATABASE_URL starts with postgres),
 # enforce secure cookies and HTTPS. Disabled for local HTTP development.
@@ -89,17 +125,29 @@ class User(db.Model, UserMixin):
     security_answer_hash = db.Column(db.String(256), nullable=True)
     books                = db.relationship('Book', backref='owner', lazy=True)
     quotes           = db.relationship('Quote', backref='reader', lazy=True)
+    reading_goals    = db.relationship(
+        'ReadingGoal', backref='user', lazy=True, cascade='all, delete-orphan'
+    )
 
 
 class Book(db.Model):
-    id         = db.Column(db.Integer, primary_key=True)
-    title      = db.Column(db.String(200), nullable=False)
-    author     = db.Column(db.String(200), nullable=False)
-    rating     = db.Column(db.Integer, nullable=False)
-    user_id    = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
-    date_added = db.Column(db.DateTime, default=datetime.utcnow, nullable=True)
-    quotes     = db.relationship('Quote', backref='book', lazy=True, cascade='all, delete-orphan')
-
+    id             = db.Column(db.Integer, primary_key=True)
+    title          = db.Column(db.String(200), nullable=False)
+    author         = db.Column(db.String(200), nullable=False)
+    rating         = db.Column(db.Integer, nullable=False)
+    reading_status = db.Column(
+        db.String(20),
+        nullable=False,
+        default=ReadingStatus.FINISHED,
+        server_default=ReadingStatus.FINISHED,
+    )
+    is_wild        = db.Column(db.Boolean, nullable=False, default=False)
+    cover_filename = db.Column(db.String(255), nullable=True)
+    started_reading_at  = db.Column(db.Date, nullable=True)
+    finished_reading_at = db.Column(db.Date, nullable=True)
+    user_id        = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    date_added     = db.Column(db.DateTime, default=datetime.utcnow, nullable=True)
+    quotes         = db.relationship('Quote', backref='book', lazy=True, cascade='all, delete-orphan')
 
 class Quote(db.Model):
     id         = db.Column(db.Integer, primary_key=True)
@@ -108,6 +156,23 @@ class Quote(db.Model):
     book_id    = db.Column(db.Integer, db.ForeignKey('book.id'), nullable=False)
     user_id    = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     date_added = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+
+class ReadingGoal(db.Model):
+    """One annual reading target per user per calendar year."""
+    __tablename__ = 'reading_goal'
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'year', name='uq_reading_goal_user_year'),
+    )
+
+    id           = db.Column(db.Integer, primary_key=True)
+    user_id      = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    year         = db.Column(db.Integer, nullable=False)
+    target_count = db.Column(db.Integer, nullable=False)
+    created_at   = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at   = db.Column(
+        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
 
 
 # ─── Extension Init ──────────────────────────────────────────
@@ -127,8 +192,7 @@ def load_user(user_id):
 # Fallback: create missing tables so the app can respond even if
 # the migration startup hook didn't run (safe for simple schemas).
 # Skip during `flask db` commands so Alembic can diff correctly.
-import sys as _sys
-_db_cli = len(_sys.argv) > 1 and _sys.argv[1] == 'db'
+_db_cli = len(sys.argv) > 1 and sys.argv[1] == 'db'
 if not _db_cli:
     try:
         from sqlalchemy import inspect as sa_inspect
@@ -404,41 +468,39 @@ def set_security_question():
 
 def _since_date(period):
     """Return a cutoff datetime for a period string, or None for all time."""
-    if period == 'month':
-        return datetime.utcnow() - timedelta(days=30)
-    return None
+    return since_date(period)
+
+
+def _parse_status_and_rating(form):
+    """Validate reading_status + rating from a form via ReadingService."""
+    return reading_service.parse_status_and_rating(form)
+
+
+def _parse_timeline_dates(form, status):
+    """Parse/validate timeline dates via ReadingService."""
+    return reading_service.parse_timeline_dates(form, status)
+
+
+def _has_rating(book_or_rating):
+    """True when a stored rating is a real 1–5 score (not the unrated sentinel)."""
+    return has_rating(book_or_rating)
+
+
+def _status_counts(books):
+    """Return a dict of reading_status → count for KPI cards."""
+    return statistics_service.status_counts(books)
 
 
 def top_authors(user_id, since=None, limit=5):
-    query = Book.query.filter_by(user_id=user_id)
-    if since:
-        query = query.filter(Book.date_added >= since)
-    books = query.all()
-    author_map = {}
-    for b in books:
-        entry = author_map.setdefault(
-            b.author, {'name': b.author, 'book_count': 0, 'rating_sum': 0}
-        )
-        entry['book_count'] += 1
-        entry['rating_sum'] += b.rating
-    result = []
-    for a in author_map.values():
-        avg = round(a['rating_sum'] / a['book_count'], 2) if a['book_count'] else 0
-        result.append({'name': a['name'], 'avg_rating': avg, 'book_count': a['book_count']})
-    result.sort(key=lambda x: (-x['avg_rating'], -x['book_count'], x['name']))
-    return result[:limit]
+    books = statistics_service.fetch_public_books_for_user(Book, user_id, since=since)
+    return statistics_service.top_authors(books, limit=limit)
 
 
 def top_books(user_id, since=None, limit=5):
-    query = (
-        Book.query
-        .filter_by(user_id=user_id)
-        .order_by(Book.rating.desc(), Book.date_added.desc())
+    books = statistics_service.fetch_top_books_for_user(
+        Book, user_id, since=since, limit=limit
     )
-    if since:
-        query = query.filter(Book.date_added >= since)
-    books = query.limit(limit).all()
-    return [{'title': b.title, 'author': b.author, 'rating': b.rating} for b in books]
+    return statistics_service.top_books(books, limit=limit)
 
 
 # ─── PNG Share Card Generation ───────────────────────────────
@@ -537,6 +599,8 @@ def generate_share_card(username, items, list_type, period_label):
         else:
             line1 = item['title'][:38]
             sub   = f"by {item['author'][:42]}"
+            if item.get('is_wild'):
+                sub += ' · WILD'
             score = str(item['rating'])
 
         draw.text((144, ry + 76),  line1, fill=TEXT1, font=fn_rank)
@@ -627,6 +691,73 @@ def share_card(username):
     )
 
 
+# ─── My Reading Year ─────────────────────────────────────────
+
+def _load_reading_year(user, year: int):
+    """Build narrative payload for one user/year from existing rows only."""
+    books = (
+        Book.query
+        .filter_by(user_id=user.id)
+        .options(selectinload(Book.quotes))
+        .all()
+    )
+    quotes = Quote.query.filter_by(user_id=user.id).all()
+    goals = ReadingGoal.query.filter_by(user_id=user.id).all()
+    goal = next((g for g in goals if g.year == year), None)
+    available = statistics_service.available_reading_years(books, goals)
+    if year not in available:
+        available = sorted(set(available) | {year}, reverse=True)
+    return statistics_service.reading_year(
+        books,
+        quotes,
+        goal,
+        reading_service,
+        year=year,
+        username=user.username,
+        available_years=available,
+    )
+
+
+@app.route('/reading-year')
+@app.route('/reading-year/<int:year>')
+@login_required
+def reading_year_page(year=None):
+    """Narrative My Reading Year experience (Spotify Wrapped-style)."""
+    if year is None:
+        year = datetime.utcnow().year
+    if year < 2000 or year > datetime.utcnow().year + 1:
+        abort(404)
+    year_data = _load_reading_year(current_user, year)
+    return render_template(
+        'reading_year.html',
+        year_data=year_data,
+        share_formats=list(ShareFormat.ALL),
+        ReadingStatus=ReadingStatus,
+    )
+
+
+@app.route('/reading-year/<int:year>/export/<slide_id>.png')
+@login_required
+@limiter.limit('30 per minute')
+def reading_year_export(year, slide_id):
+    """Export one Reading Year slide via ShareEngine (story / portrait / square)."""
+    if year < 2000 or year > datetime.utcnow().year + 1:
+        abort(404)
+    if slide_id not in StatisticsService.SLIDE_IDS:
+        abort(404)
+    fmt = (request.args.get('format') or ShareFormat.STORY).lower()
+    if not ShareFormat.is_valid(fmt):
+        fmt = ShareFormat.STORY
+    year_data = _load_reading_year(current_user, year)
+    buf = share_engine.render_reading_year_slide(slide_id, year_data, format_name=fmt)
+    return send_file(
+        buf,
+        mimetype='image/png',
+        as_attachment=True,
+        download_name=f"{current_user.username}_reading_year_{year}_{slide_id}_{fmt}.png",
+    )
+
+
 # ─── App Routes ──────────────────────────────────────────────
 
 @app.route('/')
@@ -639,50 +770,128 @@ def index():
 @app.route('/authors')
 @login_required
 def authors_page():
-    books = Book.query.filter_by(user_id=current_user.id).all()
-    author_map = {}
-    total_books = 0
-    total_rating_sum = 0
-    total_rating_count = 0
-    for b in books:
-        total_books += 1
-        total_rating_sum += (b.rating or 0)
-        total_rating_count += 1
-        entry = author_map.setdefault(
-            b.author, {'name': b.author, 'bookCount': 0, 'titles': [], 'ratingSum': 0}
-        )
-        entry['bookCount'] += 1
-        entry['titles'].append(b.title)
-        entry['ratingSum'] += (b.rating or 0)
-
-    authors = []
-    for a in author_map.values():
-        avg = round((a['ratingSum'] / a['bookCount']) if a['bookCount'] else 0, 2)
-        authors.append({'name': a['name'], 'bookCount': a['bookCount'], 'titles': a['titles'], 'avgRating': avg})
-
-    overall_avg = round((total_rating_sum / total_rating_count), 2) if total_rating_count else 0
-    most_active = max(authors, key=lambda x: x['bookCount'])['name'] if authors else ''
-    authors = sorted(authors, key=lambda x: x['name'] or '')
+    books = (
+        Book.query
+        .filter_by(user_id=current_user.id)
+        .options(selectinload(Book.quotes))
+        .all()
+    )
+    dash = statistics_service.reading_dashboard(books, reading_service)
+    year = datetime.utcnow().year
+    goal = ReadingGoal.query.filter_by(user_id=current_user.id, year=year).first()
+    reading_goal = statistics_service.annual_goal_progress(
+        goal,
+        dash['reading_summary']['finished_this_year'],
+    )
+    home = statistics_service.home_personalization(
+        username=current_user.username,
+        books=books,
+        kpis=dash['kpis'],
+        reading_summary=dash['reading_summary'],
+        currently_reading=dash['currently_reading'],
+        reading_goal=reading_goal,
+        is_empty=dash['is_empty'],
+    )
 
     return render_template(
         'index.html',
-        authors=authors,
-        total_books=total_books,
-        overall_avg=overall_avg,
-        most_active=most_active,
+        authors=dash['authors'],
+        books=books,
+        total_books=dash['total_books'],
+        overall_avg=dash['overall_avg'],
+        most_active=dash['most_active'],
+        wild_count=dash['wild_count'],
+        status_counts=dash['status_counts'],
+        kpis=dash['kpis'],
+        charts=dash['charts'],
+        reading_summary=dash['reading_summary'],
+        recent_activity=dash['recent_activity'],
+        currently_reading=dash['currently_reading'],
+        is_empty=dash['is_empty'],
+        reading_statuses=ReadingStatus.choices(),
+        ReadingStatus=ReadingStatus,
+        reading_service=reading_service,
+        reading_goal=reading_goal,
+        home_hero=home['hero'],
+        reading_snapshot=home['snapshot'],
+        recently_finished=home['recently_finished'],
     )
+
+
+@app.route('/reading-goal', methods=['POST'])
+@login_required
+def set_reading_goal():
+    """Create or update the current user's annual reading goal for this year."""
+    year = datetime.utcnow().year
+    raw = (request.form.get('target_count') or '').strip()
+    try:
+        target = int(raw)
+    except (TypeError, ValueError):
+        flash('Enter a whole number of books for your goal.', 'goal_error')
+        return redirect(url_for('authors_page'))
+    if target < 1 or target > 500:
+        flash('Goal must be between 1 and 500 books.', 'goal_error')
+        return redirect(url_for('authors_page'))
+
+    goal = ReadingGoal.query.filter_by(user_id=current_user.id, year=year).first()
+    if goal is None:
+        goal = ReadingGoal(
+            user_id=current_user.id,
+            year=year,
+            target_count=target,
+        )
+        db.session.add(goal)
+        flash(f'{year} reading goal set to {target} books.', 'goal_success')
+    else:
+        goal.target_count = target
+        goal.updated_at = datetime.utcnow()
+        flash(f'{year} reading goal updated to {target} books.', 'goal_success')
+    db.session.commit()
+    return redirect(url_for('authors_page'))
 
 
 @app.route('/author/<author>')
 @login_required
 def author_books(author):
-    books = Book.query.filter_by(author=author, user_id=current_user.id).all()
-    return render_template('author_books.html', author=author, books=books, author_count=len(books))
+    books = (
+        Book.query
+        .filter_by(author=author, user_id=current_user.id)
+        .options(selectinload(Book.quotes))
+        .all()
+    )
+    stats = statistics_service.author_page_stats(books)
+    return render_template(
+        'author_books.html',
+        author=author,
+        books=books,
+        author_count=stats['author_count'],
+        wild_count=stats['wild_count'],
+        avg_rating=stats['avg_rating'],
+        currently_reading_count=stats['currently_reading_count'],
+        reading_statuses=ReadingStatus.choices(),
+        ReadingStatus=ReadingStatus,
+        reading_service=reading_service,
+    )
 
 
 @app.route('/cover')
 def cover():
     return render_template('cover.html')
+
+
+@app.route('/uploads/books/<path:filename>')
+def serve_book_cover(filename):
+    """Serve a processed book cover from uploads/books/."""
+    path = media_service.resolve_book_cover_path(filename)
+    if path is None:
+        abort(404)
+    return send_from_directory(media_service.books_dir, path.name)
+
+
+@app.errorhandler(413)
+def request_entity_too_large(_error):
+    flash('Cover image must be 5 MB or smaller.', 'cover_error')
+    return redirect(request.referrer or url_for('authors_page'))
 
 
 @app.route('/edit/<int:id>', methods=['GET', 'POST'])
@@ -691,13 +900,57 @@ def edit(id):
     book = Book.query.get_or_404(id)
     if book.user_id != current_user.id:
         abort(403)
+
+    def _render_edit():
+        return render_template(
+            'edit_book.html',
+            book=book,
+            reading_statuses=ReadingStatus.choices(),
+            ReadingStatus=ReadingStatus,
+            reading_service=reading_service,
+        )
+
     if request.method == 'POST':
-        book.title  = request.form['title']
+        status, rating, err = _parse_status_and_rating(request.form)
+        if err:
+            flash(err, 'book_error')
+            return _render_edit()
+
+        started, finished, date_err = _parse_timeline_dates(request.form, status)
+        if date_err:
+            flash(date_err, 'book_error')
+            return _render_edit()
+
+        book.title = request.form['title']
         book.author = request.form['author']
-        book.rating = int(request.form['rating'])
+        book.reading_status = status
+        book.rating = rating
+        book.is_wild = request.form.get('is_wild') in ('on', '1', 'true', 'True')
+        book.started_reading_at = started
+        book.finished_reading_at = finished
+
+        remove_cover = request.form.get('remove_cover') in ('on', '1', 'true', 'True')
+        cover_file = request.files.get('cover')
+        has_new_cover = cover_file and cover_file.filename
+
+        if remove_cover and not has_new_cover:
+            media_service.delete_book_cover(book.cover_filename)
+            book.cover_filename = None
+        elif has_new_cover:
+            try:
+                new_filename = media_service.save_book_cover(cover_file)
+            except MediaValidationError as exc:
+                flash(exc.message, 'cover_error')
+                return _render_edit()
+            old_filename = book.cover_filename
+            book.cover_filename = new_filename
+            # Delete old file only after the new one is saved successfully
+            if old_filename and old_filename != new_filename:
+                media_service.delete_book_cover(old_filename)
+
         db.session.commit()
         return redirect(url_for('authors_page'))
-    return render_template('edit_book.html', book=book)
+    return _render_edit()
 
 
 @app.route('/delete/<int:id>')
@@ -706,30 +959,104 @@ def delete(id):
     book = Book.query.get_or_404(id)
     if book.user_id != current_user.id:
         abort(403)
+    cover_filename = book.cover_filename
     db.session.delete(book)
     db.session.commit()
+    media_service.delete_book_cover(cover_filename)
     return redirect(url_for('authors_page'))
 
 
 @app.route('/add', methods=['GET', 'POST'])
 @login_required
 def add():
+    next_param = safe_next_url(
+        request.form.get('next') or request.args.get('next') or request.referrer,
+        url_for('authors_page'),
+    )
+
+    def _render_add():
+        return render_template(
+            'add_book.html',
+            next=next_param,
+            reading_statuses=ReadingStatus.choices(),
+            ReadingStatus=ReadingStatus,
+            reading_service=reading_service,
+        )
+
     if request.method == 'POST':
+        status, rating, err = _parse_status_and_rating(request.form)
+        if err:
+            flash(err, 'book_error')
+            return _render_add()
+
+        started, finished, date_err = _parse_timeline_dates(request.form, status)
+        if date_err:
+            flash(date_err, 'book_error')
+            return _render_add()
+
+        cover_filename = None
+        cover_file = request.files.get('cover')
+        if cover_file and cover_file.filename:
+            try:
+                cover_filename = media_service.save_book_cover(cover_file)
+            except MediaValidationError as exc:
+                flash(exc.message, 'cover_error')
+                return _render_add()
+        else:
+            # Optional catalog cover (provider URL). Never blocks manual entry.
+            cover_url = (request.form.get('cover_url') or '').strip()
+            if cover_url and book_metadata_service.is_allowed_cover_url(cover_url):
+                raw = book_metadata_service.fetch_cover_bytes(
+                    cover_url,
+                    max_bytes=media_service.MAX_BYTES,
+                )
+                if raw:
+                    try:
+                        cover_filename = media_service.save_book_cover_from_bytes(raw)
+                    except MediaValidationError:
+                        cover_filename = None
+
         new_book = Book(
             title=request.form['title'],
             author=request.form['author'],
-            rating=int(request.form['rating']),
+            rating=rating,
+            reading_status=status,
+            is_wild=request.form.get('is_wild') in ('on', '1', 'true', 'True'),
+            cover_filename=cover_filename,
+            started_reading_at=started,
+            finished_reading_at=finished,
             user_id=current_user.id,
         )
         db.session.add(new_book)
         db.session.commit()
-        next_url = request.form.get('next') or request.referrer or url_for('authors_page')
-        if not isinstance(next_url, str) or not next_url.startswith('/'):
-            next_url = url_for('authors_page')
-        sep = '&' if '?' in next_url else '?'
-        return redirect(next_url + sep + 'added=1')
-    next_param = request.args.get('next') or request.referrer or url_for('authors_page')
-    return render_template('add_book.html', next=next_param)
+        sep = '&' if '?' in next_param else '?'
+        return redirect(next_param + sep + 'added=1')
+    return _render_add()
+
+
+@app.route('/api/books/search')
+@login_required
+@limiter.limit('30 per minute')
+def api_books_search():
+    """Live catalog search for the Add Book form. Never mutates the database."""
+    query = (request.args.get('q') or '').strip()
+    try:
+        limit = int(request.args.get('limit') or 8)
+    except (TypeError, ValueError):
+        limit = 8
+    results = book_metadata_service.search_books(query, limit=limit)
+    return jsonify({'results': results, 'query': query})
+
+
+@app.route('/api/books/<path:book_id>')
+@login_required
+@limiter.limit('30 per minute')
+def api_books_get(book_id):
+    """Fetch one normalized catalog entry by prefixed id (gb:… / ol:…)."""
+    book = book_metadata_service.get_book(book_id)
+    if not book:
+        return jsonify({'error': 'not_found'}), 404
+    return jsonify(book)
 
 
 # ─── Quotes Routes ───────────────────────────────────────────
@@ -814,94 +1141,187 @@ def quotes_page():
 
 # ─── Admin Routes ────────────────────────────────────────────
 
+@app.route('/admin')
+@admin_required
+def admin_home():
+    return redirect(url_for('admin_users'))
+
+
 @app.route('/admin/users')
 @admin_required
 def admin_users():
     users = User.query.order_by(User.created_at.asc()).all()
-    non_admin = [u for u in users if u.username != ADMIN_USERNAME]
-
-    # ── KPI counts ──────────────────────────────────────────
-    total_users    = len(users)
-    active_users   = sum(1 for u in users if u.is_active)
-    disabled_users = total_users - active_users
-    total_books    = Book.query.count()
-    total_quotes   = Quote.query.count()
-
-    most_active = max(non_admin, key=lambda u: len(u.books), default=None)
-    newest_user = max(non_admin, key=lambda u: u.created_at, default=None)
-
-    # ── Books added per month (last 12 months) ───────────────
-    now = datetime.utcnow()
-    month_keys   = []
-    month_labels = []
-    for i in range(11, -1, -1):
-        # step back i months from current
-        y = now.year + (now.month - 1 - i) // 12
-        m = (now.month - 1 - i) % 12 + 1
-        month_keys.append(f'{y}-{m:02d}')
-        month_labels.append(datetime(y, m, 1).strftime('%b %y'))
-
-    counts = defaultdict(int)
-    for b in Book.query.all():
-        if b.date_added:
-            counts[b.date_added.strftime('%Y-%m')] += 1
-    books_per_month = json.dumps([counts.get(k, 0) for k in month_keys])
-    month_labels_js = json.dumps(month_labels)
-
-    # ── Books per user (non-admin only) ─────────────────────
-    users_labels_js = json.dumps([u.username for u in non_admin])
-    users_books_js  = json.dumps([len(u.books) for u in non_admin])
-
-    # ── Top 5 authors across all users ──────────────────────
-    author_counts  = defaultdict(lambda: {'count': 0, 'rating_sum': 0})
-    for b in Book.query.all():
-        author_counts[b.author]['count']      += 1
-        author_counts[b.author]['rating_sum'] += b.rating
-    top_authors_global = sorted(
-        [{'name': a, 'count': v['count'],
-          'avg_rating': round(v['rating_sum'] / v['count'], 1)}
-         for a, v in author_counts.items()],
-        key=lambda x: (-x['count'], -x['avg_rating'])
-    )[:5]
-
-    # ── Top 5 books across all users ────────────────────────
-    book_agg = defaultdict(lambda: {'count': 0, 'rating_sum': 0, 'author': ''})
-    for b in Book.query.all():
-        key = b.title
-        book_agg[key]['count']      += 1
-        book_agg[key]['rating_sum'] += b.rating
-        book_agg[key]['author']      = b.author
-    top_books_global = sorted(
-        [{'title': t, 'author': v['author'], 'count': v['count'],
-          'avg_rating': round(v['rating_sum'] / v['count'], 1)}
-         for t, v in book_agg.items()],
-        key=lambda x: (-x['avg_rating'], -x['count'])
-    )[:5]
-
-    orphaned_count = Book.query.filter_by(user_id=None).count()
+    books = Book.query.all()
+    stats = statistics_service.admin_dashboard(
+        users=users,
+        books=books,
+        total_quotes=Quote.query.count(),
+        admin_username=ADMIN_USERNAME,
+        orphaned_count=Book.query.filter_by(user_id=None).count(),
+    )
 
     flash_errors   = get_flashed_messages(category_filter=['admin_error'])
     flash_messages = get_flashed_messages(category_filter=['admin_success'])
     return render_template(
         'admin_users.html',
         users=users,
-        non_admin=non_admin,
-        total_users=total_users,
-        active_users=active_users,
-        disabled_users=disabled_users,
-        total_books=total_books,
-        total_quotes=total_quotes,
-        most_active=most_active,
-        newest_user=newest_user,
-        month_labels_js=month_labels_js,
-        books_per_month=books_per_month,
-        users_labels_js=users_labels_js,
-        users_books_js=users_books_js,
-        top_authors_global=top_authors_global,
-        top_books_global=top_books_global,
-        orphaned_count=orphaned_count,
+        non_admin=stats['non_admin'],
+        total_users=stats['total_users'],
+        active_users=stats['active_users'],
+        disabled_users=stats['disabled_users'],
+        total_books=stats['total_books'],
+        total_quotes=stats['total_quotes'],
+        wild_count=stats['wild_count'],
+        currently_reading=stats['currently_reading'],
+        books_added_this_week=stats['books_added_this_week'],
+        most_active=stats['most_active'],
+        newest_user=stats['newest_user'],
+        month_labels_js=stats['month_labels_js'],
+        books_per_month=stats['books_per_month'],
+        users_labels_js=stats['users_labels_js'],
+        users_books_js=stats['users_books_js'],
+        top_authors_global=stats['top_authors_global'],
+        top_books_global=stats['top_books_global'],
+        orphaned_count=stats['orphaned_count'],
         flash_errors=flash_errors,
         flash_messages=flash_messages,
+        admin_nav='dashboard',
+    )
+
+
+@app.route('/admin/explorer')
+@admin_required
+def admin_explorer():
+    q = (request.args.get('q') or '').strip()
+    sort = (request.args.get('sort') or 'books').strip().lower()
+    order = (request.args.get('order') or 'desc').strip().lower()
+    if sort not in {'username', 'joined', 'books', 'quotes', 'wild', 'reading', 'status'}:
+        sort = 'books'
+    if order not in {'asc', 'desc'}:
+        order = 'desc'
+
+    users = (
+        User.query
+        .options(
+            selectinload(User.books),
+            selectinload(User.quotes),
+        )
+        .order_by(User.created_at.asc())
+        .all()
+    )
+    rows = statistics_service.admin_user_explorer(
+        users, q=q, sort=sort, order=order
+    )
+    return render_template(
+        'admin_explorer.html',
+        rows=rows,
+        q=q,
+        sort=sort,
+        order=order,
+        admin_nav='explorer',
+    )
+
+
+@app.route('/admin/users/<int:user_id>')
+@admin_required
+def admin_user_detail(user_id):
+    user = (
+        User.query
+        .options(
+            selectinload(User.books).selectinload(Book.quotes),
+            selectinload(User.quotes).selectinload(Quote.book),
+        )
+        .filter_by(id=user_id)
+        .first_or_404()
+    )
+    books = list(user.books)
+    books.sort(
+        key=lambda b: (
+            b.date_added is None,
+            -(b.date_added.timestamp() if b.date_added else 0),
+            (b.title or '').lower(),
+        )
+    )
+    dash = statistics_service.reading_dashboard(
+        books, reading_service
+    )
+    quotes = list(user.quotes)
+    quote_groups = statistics_service.admin_group_quotes(quotes)
+    flash_errors   = get_flashed_messages(category_filter=['admin_error'])
+    flash_messages = get_flashed_messages(category_filter=['admin_success'])
+    return render_template(
+        'admin_user_detail.html',
+        profile_user=user,
+        books=books,
+        quote_groups=quote_groups,
+        quote_count=len(quotes),
+        kpis=dash['kpis'],
+        charts=dash['charts'],
+        reading_summary=dash['reading_summary'],
+        currently_reading=dash['currently_reading'],
+        recent_activity=dash['recent_activity'],
+        is_empty=dash['is_empty'],
+        status_counts=dash['status_counts'],
+        wild_count=dash['wild_count'],
+        overall_avg=dash['overall_avg'],
+        ReadingStatus=ReadingStatus,
+        reading_service=reading_service,
+        reading_statuses=ReadingStatus.choices(),
+        flash_errors=flash_errors,
+        flash_messages=flash_messages,
+        admin_nav='explorer',
+    )
+
+
+@app.route('/admin/library')
+@admin_required
+def admin_library():
+    user_id = request.args.get('user_id', type=int)
+    author = (request.args.get('author') or '').strip()
+    status = (request.args.get('status') or '').strip()
+    rating = request.args.get('rating', type=int)
+    wild_raw = (request.args.get('wild') or '').strip().lower()
+
+    query = Book.query.options(
+        selectinload(Book.quotes),
+        selectinload(Book.owner),
+    )
+    if user_id is not None:
+        query = query.filter(Book.user_id == user_id)
+    if author:
+        query = query.filter(Book.author.ilike(f'%{author}%'))
+    if status and ReadingStatus.is_valid(status):
+        query = query.filter(Book.reading_status == status)
+    if rating is not None and 1 <= rating <= 5:
+        query = query.filter(Book.rating == rating)
+    if wild_raw in {'1', 'true', 'yes'}:
+        query = query.filter(Book.is_wild.is_(True))
+    elif wild_raw in {'0', 'false', 'no'}:
+        query = query.filter(Book.is_wild.is_(False))
+
+    books = query.order_by(Book.date_added.desc(), Book.id.desc()).all()
+    users = User.query.order_by(User.username.asc()).all()
+    authors = [
+        row[0]
+        for row in db.session.query(Book.author).distinct().order_by(Book.author.asc()).all()
+        if row[0]
+    ]
+
+    return render_template(
+        'admin_library.html',
+        books=books,
+        users=users,
+        authors=authors,
+        filter_user_id=user_id,
+        filter_author=author,
+        filter_status=status,
+        filter_rating=rating,
+        filter_wild=wild_raw,
+        ReadingStatus=ReadingStatus,
+        reading_service=reading_service,
+        reading_statuses=ReadingStatus.choices(),
+        admin_nav='library',
+        total_matched=len(books),
     )
 
 
@@ -932,8 +1352,9 @@ def admin_toggle_active(user_id):
     db.session.commit()
     action = 'enabled' if user.is_active else 'disabled'
     flash(f'Account for "{user.username}" has been {action}.', 'admin_success')
-    return redirect(url_for('admin_users'))
-
+    return redirect(
+        safe_next_url(request.form.get('next'), url_for('admin_users'))
+    )
 
 
 @app.route('/admin/users/<int:user_id>/delete', methods=['POST'])
@@ -943,16 +1364,20 @@ def admin_delete_user(user_id):
     if user.id == current_user.id:
         flash('You cannot delete your own account.', 'admin_error')
         return redirect(url_for('admin_users'))
-    # Cascade-delete quotes then books, then user
+    # Cascade-delete quotes then books (and their cover files), then goals, then user
     for q in Quote.query.filter_by(user_id=user.id).all():
         db.session.delete(q)
     for b in Book.query.filter_by(user_id=user.id).all():
+        media_service.delete_book_cover(b.cover_filename)
         db.session.delete(b)
+    for g in ReadingGoal.query.filter_by(user_id=user.id).all():
+        db.session.delete(g)
     db.session.delete(user)
     db.session.commit()
     flash(f'User "{user.username}" and all their data have been deleted.', 'admin_success')
-    return redirect(url_for('admin_users'))
-
+    return redirect(
+        safe_next_url(request.form.get('next'), url_for('admin_explorer'))
+    )
 
 def _repair_db():
     """Add any columns missing from pre-migration production databases.
@@ -965,7 +1390,12 @@ def _repair_db():
                 conn.execute(sa.text(
                     'ALTER TABLE book '
                     'ADD COLUMN IF NOT EXISTS user_id INTEGER, '
-                    'ADD COLUMN IF NOT EXISTS date_added TIMESTAMP'
+                    'ADD COLUMN IF NOT EXISTS date_added TIMESTAMP, '
+                    'ADD COLUMN IF NOT EXISTS is_wild BOOLEAN NOT NULL DEFAULT FALSE, '
+                    'ADD COLUMN IF NOT EXISTS cover_filename VARCHAR(255), '
+                    "ADD COLUMN IF NOT EXISTS reading_status VARCHAR(20) NOT NULL DEFAULT 'finished', "
+                    'ADD COLUMN IF NOT EXISTS started_reading_at DATE, '
+                    'ADD COLUMN IF NOT EXISTS finished_reading_at DATE'
                 ))
                 conn.execute(sa.text(
                     'ALTER TABLE "user" '
@@ -982,6 +1412,17 @@ def _repair_db():
                         book_id INTEGER NOT NULL REFERENCES book(id),
                         user_id INTEGER NOT NULL REFERENCES "user"(id),
                         date_added TIMESTAMP NOT NULL
+                    )
+                '''))
+                conn.execute(sa.text('''
+                    CREATE TABLE IF NOT EXISTS reading_goal (
+                        id SERIAL PRIMARY KEY,
+                        user_id INTEGER NOT NULL REFERENCES "user"(id),
+                        year INTEGER NOT NULL,
+                        target_count INTEGER NOT NULL,
+                        created_at TIMESTAMP NOT NULL,
+                        updated_at TIMESTAMP NOT NULL,
+                        CONSTRAINT uq_reading_goal_user_year UNIQUE (user_id, year)
                     )
                 '''))
             print('[REPAIR] DB schema repair completed.', flush=True)

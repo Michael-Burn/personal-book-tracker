@@ -1,46 +1,21 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ current_user.username }}'s Library — Book Tracker</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body class="db-body">
+{% extends "base.html" %}
+
+{% block title %}{{ current_user.username }}'s Library — Book Tracker{% endblock %}
+
+{% block extra_head %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block body_class_attr %} class="db-body"{% endblock %}
+
+{% block body %}
     <div class="db-shell">
         <div class="db-layout">
         <div class="db-card">
 
             <!-- ── Navigation ─────────────────────────────── -->
-            <nav class="db-nav">
-                <a class="db-logo" href="{{ url_for('authors_page') }}">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-                    <span>Book Tracker</span>
-                </a>
-                <div class="db-nav-actions">
-                    <a href="{{ url_for('share_page', username=current_user.username) }}" class="db-nav-btn">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-                        Share
-                    </a>
-                    <a href="{{ url_for('change_password') }}" class="db-nav-btn db-nav-btn--icon" title="Change Password">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
-                    </a>
-                    <a href="{{ url_for('quotes_page') }}" class="db-nav-btn">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                        Quotes
-                    </a>
-                    {% if current_user.username == 'Admin' %}
-                    <a href="{{ url_for('admin_users') }}" class="db-nav-btn db-nav-btn--admin">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                        Admin
-                    </a>
-                    {% endif %}
-                    <a href="{{ url_for('logout') }}" class="db-nav-btn db-nav-btn--out">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                        Sign Out
-                    </a>
-                </div>
-            </nav>
+            {% set nav_variant='dashboard' %}
+            {% include 'components/navbar.html' %}
 
             <!-- ── Profile ────────────────────────────────── -->
             <div class="db-profile">
@@ -61,7 +36,7 @@
                     </form>
                     <div class="db-profile-text">
                         <h1 class="db-profile-name">{{ current_user.username }}'s Library</h1>
-                        <p class="db-profile-meta">Member since {{ current_user.created_at.strftime('%B %Y') }}{% with msgs = get_flashed_messages(category_filter=['avatar_error']) %}{% if msgs %}&nbsp;·&nbsp;<span class="db-err">{{ msgs[0] }}</span>{% endif %}{% endwith %}</p>
+                        <p class="db-profile-meta">Member since {{ current_user.created_at.strftime('%B %Y') }}{% with msgs = get_flashed_messages(category_filter=['avatar_error', 'cover_error']) %}{% if msgs %}&nbsp;·&nbsp;<span class="db-err">{{ msgs[0] }}</span>{% endif %}{% endwith %}</p>
                     </div>
                 </div>
                 <div class="db-profile-right">
@@ -69,24 +44,400 @@
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     Add Book
                 </a>
-                <div class="db-stats">
-                    <div class="db-stat">
-                        <span class="db-stat-val">{{ authors|length }}</span>
-                        <span class="db-stat-lbl">Authors</span>
-                    </div>
-                    <div class="db-stat-sep"></div>
-                    <div class="db-stat">
-                        <span class="db-stat-val">{{ total_books }}</span>
-                        <span class="db-stat-lbl">Books</span>
-                    </div>
-                    <div class="db-stat-sep"></div>
-                    <div class="db-stat">
-                        <span class="db-stat-val">{{ overall_avg }}</span>
-                        <span class="db-stat-lbl">Avg Rating</span>
-                    </div>
-                </div><!-- /.db-stats -->
                 </div><!-- /.db-profile-right -->
             </div>
+
+            <!-- ── Personalized Hero ──────────────────────── -->
+            <section class="home-hero home-hero--{{ home_hero.scenario }}" aria-label="Your reading journey">
+                <div class="home-hero-body">
+                    <p class="home-hero-eyebrow">{{ home_hero.eyebrow }}</p>
+                    <h2 class="home-hero-title">{{ home_hero.title }}</h2>
+                    <p class="home-hero-msg">{{ home_hero.message }}</p>
+                    <div class="home-hero-actions">
+                        {% if home_hero.cta_anchor == 'continue' and currently_reading %}
+                        <a href="{{ url_for('edit', id=currently_reading[0].book.id) }}" class="home-hero-cta">{{ home_hero.cta_label }}</a>
+                        <a href="#continue-reading" class="home-hero-cta home-hero-cta--ghost">View shelf</a>
+                        {% elif home_hero.cta_anchor == 'goal' %}
+                        <a href="#reading-goal" class="home-hero-cta">{{ home_hero.cta_label }}</a>
+                        {% elif home_hero.cta_anchor == 'reading_year' %}
+                        <a href="{{ url_for('reading_year_page') }}" class="home-hero-cta">{{ home_hero.cta_label }}</a>
+                        {% else %}
+                        <a href="{{ url_for('add') }}?next={{ request.path }}" class="home-hero-cta open-add-modal">{{ home_hero.cta_label }}</a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if home_hero.book %}
+                <div class="home-hero-cover" aria-hidden="true">
+                    {% set cover_filename = home_hero.book.cover_filename %}
+                    {% set title = home_hero.book.title %}
+                    {% set thumb_class = 'book-cover-thumb--hero' %}
+                    {% set svg_size = 42 %}
+                    {% set alt = home_hero.book.title %}
+                    {% include 'components/cover_image.html' %}
+                </div>
+                {% endif %}
+            </section>
+
+            <!-- ── Quick Actions ──────────────────────────── -->
+            <nav class="home-actions" aria-label="Quick actions">
+                <a href="{{ url_for('add') }}?next={{ request.path }}" class="home-action open-add-modal">
+                    <span class="home-action-ico" aria-hidden="true">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    </span>
+                    <span class="home-action-lbl">Add Book</span>
+                </a>
+                {% if currently_reading %}
+                <a href="#continue-reading" class="home-action">
+                    <span class="home-action-ico" aria-hidden="true">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                    </span>
+                    <span class="home-action-lbl">Continue Reading</span>
+                </a>
+                {% else %}
+                <a href="{{ url_for('add') }}?next={{ request.path }}" class="home-action open-add-modal">
+                    <span class="home-action-ico" aria-hidden="true">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                    </span>
+                    <span class="home-action-lbl">Start Reading</span>
+                </a>
+                {% endif %}
+                <a href="{{ url_for('reading_year_page') }}" class="home-action">
+                    <span class="home-action-ico" aria-hidden="true">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    </span>
+                    <span class="home-action-lbl">My Reading Year</span>
+                </a>
+                <a href="#reading-goal" class="home-action">
+                    <span class="home-action-ico" aria-hidden="true">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                    </span>
+                    <span class="home-action-lbl">Reading Goal</span>
+                </a>
+            </nav>
+
+            {% if reading_snapshot %}
+            <!-- ── Reading Snapshot ───────────────────────── -->
+            <aside class="home-snapshot" aria-label="Reading snapshot">
+                <span class="home-snapshot-label">{{ reading_snapshot.label }}</span>
+                <p class="home-snapshot-text">{{ reading_snapshot.text }}</p>
+            </aside>
+            {% endif %}
+
+            <!-- ── Continue Reading ───────────────────────── -->
+            <section id="continue-reading" class="home-continue" aria-label="Continue reading">
+                <div class="home-section-head">
+                    <h2 class="rs-section-title">Continue Reading</h2>
+                    {% if currently_reading %}
+                    <span class="home-section-count">{{ currently_reading|length }} in progress</span>
+                    {% endif %}
+                </div>
+                {% if currently_reading %}
+                <ul class="home-continue-list">
+                    {% for item in currently_reading %}
+                    <li class="home-continue-card">
+                        {% set cover_filename = item.book.cover_filename %}
+                        {% set title = item.book.title %}
+                        {% set thumb_class = 'book-cover-thumb--continue' %}
+                        {% set svg_size = 28 %}
+                        {% set alt = item.book.title %}
+                        {% include 'components/cover_image.html' %}
+                        <div class="home-continue-main">
+                            <h3 class="home-continue-title">{{ item.book.title }}</h3>
+                            <p class="home-continue-author">{{ item.book.author }}</p>
+                            <div class="home-continue-meta">
+                                {% if item.elapsed_days %}
+                                <span class="home-continue-days">{{ item.elapsed_days }} day{{ 's' if item.elapsed_days != 1 else '' }} reading</span>
+                                {% endif %}
+                                {% if item.started_reading_at %}
+                                <span class="home-continue-started">Started {{ item.started_reading_at.strftime('%b %d, %Y') }}</span>
+                                {% else %}
+                                <span class="home-continue-started home-continue-started--muted">Add a start date to track days</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <a href="{{ url_for('edit', id=item.book.id) }}" class="home-continue-btn">Continue</a>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="home-empty home-empty--continue">
+                    <p class="home-empty-title">{% if is_empty %}Your next chapter starts with one book.{% else %}No book in progress right now.{% endif %}</p>
+                    <p class="home-empty-sub">{% if is_empty %}Add a title and mark it Currently Reading — this space will keep your place.{% else %}Open your Want to Read list, or add something new and set the status to Currently Reading.{% endif %}</p>
+                    <a href="{{ url_for('add') }}?next={{ request.path }}" class="home-empty-cta open-add-modal">Add a book</a>
+                </div>
+                {% endif %}
+            </section>
+
+            <!-- ── Recently Finished ──────────────────────── -->
+            <section class="home-finished" aria-label="Recently finished">
+                <div class="home-section-head">
+                    <h2 class="rs-section-title">Recently Finished</h2>
+                </div>
+                {% if recently_finished %}
+                <ul class="home-finished-list">
+                    {% for item in recently_finished %}
+                    <li class="home-finished-card">
+                        <a href="{{ url_for('edit', id=item.book.id) }}" class="home-finished-link">
+                            {% set cover_filename = item.book.cover_filename %}
+                            {% set title = item.book.title %}
+                            {% set thumb_class = 'book-cover-thumb--finished' %}
+                            {% set svg_size = 22 %}
+                            {% set alt = item.book.title %}
+                            {% include 'components/cover_image.html' %}
+                            <div class="home-finished-main">
+                                <span class="home-finished-title">{{ item.book.title }}</span>
+                                <span class="home-finished-author">{{ item.book.author }}</span>
+                                <span class="home-finished-date">Finished {{ item.finished_reading_at.strftime('%b %d, %Y') }}</span>
+                            </div>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="home-empty home-empty--finished">
+                    <p class="home-empty-title">{% if is_empty %}Finished books will gather here.{% else %}No recent finishes with dates yet.{% endif %}</p>
+                    <p class="home-empty-sub">{% if is_empty %}When you close a book, add a finish date — your timeline becomes a reading history.{% else %}Mark a book Finished and set its finish date to build this shelf from your timeline.{% endif %}</p>
+                </div>
+                {% endif %}
+            </section>
+
+            <!-- ── Reading Statistics KPIs ─────────────────── -->
+            <div class="rs-kpi-row" aria-label="Reading statistics">
+                <div class="rs-kpi-card rs-kpi-card--finished">
+                    <div class="rs-kpi-icon" aria-hidden="true">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    </div>
+                    <div class="rs-kpi-val">{{ kpis.books_finished }}</div>
+                    <div class="rs-kpi-lbl">Books Finished</div>
+                </div>
+                <div class="rs-kpi-card rs-kpi-card--reading">
+                    <div class="rs-kpi-icon" aria-hidden="true">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                    </div>
+                    <div class="rs-kpi-val">{{ kpis.currently_reading }}</div>
+                    <div class="rs-kpi-lbl">Currently Reading</div>
+                </div>
+                <div class="rs-kpi-card rs-kpi-card--want">
+                    <div class="rs-kpi-icon" aria-hidden="true">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                    </div>
+                    <div class="rs-kpi-val">{{ kpis.want_to_read }}</div>
+                    <div class="rs-kpi-lbl">Want To Read</div>
+                </div>
+                <div class="rs-kpi-card rs-kpi-card--rating">
+                    <div class="rs-kpi-icon" aria-hidden="true">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    </div>
+                    <div class="rs-kpi-val">{% if kpis.average_rating_display %}{{ kpis.average_rating_display }}{% else %}—{% endif %}</div>
+                    <div class="rs-kpi-lbl">Average Rating</div>
+                </div>
+                <div class="rs-kpi-card rs-kpi-card--wild">
+                    <div class="rs-kpi-icon" aria-hidden="true">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+                    </div>
+                    <div class="rs-kpi-val">{{ kpis.wild_books }}</div>
+                    <div class="rs-kpi-lbl">Wild Books</div>
+                </div>
+                <div class="rs-kpi-card rs-kpi-card--author">
+                    <div class="rs-kpi-icon" aria-hidden="true">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </div>
+                    <div class="rs-kpi-val rs-kpi-val--text">{% if kpis.favourite_author %}{{ kpis.favourite_author }}{% else %}—{% endif %}</div>
+                    <div class="rs-kpi-lbl">Favourite Author</div>
+                </div>
+            </div>
+
+            <!-- ── Annual Reading Goal ────────────────────── -->
+            <section id="reading-goal" class="rs-goal" aria-label="{{ reading_goal.year }} reading goal">
+                <h2 class="rs-section-title rs-goal-title">{{ reading_goal.year }} Reading Goal</h2>
+
+                {% if reading_goal.exists %}
+                <div class="rs-goal-card">
+                    <div class="rs-goal-top">
+                        <div class="rs-goal-stats">
+                            <span class="rs-goal-progress-text">
+                                <strong>{{ reading_goal.completed }}</strong> of <strong>{{ reading_goal.target }}</strong> books
+                            </span>
+                            <span class="rs-goal-pct">{{ reading_goal.percent }}%</span>
+                        </div>
+                        {% if reading_goal.pace_label %}
+                        <span class="rs-goal-pace {% if reading_goal.goal_met %}rs-goal-pace--met{% elif reading_goal.on_pace %}rs-goal-pace--on{% else %}rs-goal-pace--behind{% endif %}">
+                            {{ reading_goal.pace_label }}
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div class="rs-goal-bar" role="progressbar"
+                         aria-valuemin="0" aria-valuemax="100"
+                         aria-valuenow="{{ reading_goal.percent }}"
+                         aria-label="{{ reading_goal.percent }} percent of goal">
+                        <div class="rs-goal-fill {% if reading_goal.goal_met %}rs-goal-fill--met{% elif reading_goal.on_pace %}rs-goal-fill--on{% else %}rs-goal-fill--behind{% endif %}"
+                             style="width: {{ reading_goal.percent }}%;"></div>
+                    </div>
+                    {% if reading_goal.projection_label %}
+                    <p class="rs-goal-projection">{{ reading_goal.projection_label }}</p>
+                    {% endif %}
+                    <form class="rs-goal-form rs-goal-form--edit" action="{{ url_for('set_reading_goal') }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <label class="rs-goal-label" for="goalTargetEdit">Update goal</label>
+                        <div class="rs-goal-form-row">
+                            <input type="number" id="goalTargetEdit" name="target_count"
+                                   class="rs-goal-input" min="1" max="500" required
+                                   value="{{ reading_goal.target }}"
+                                   aria-label="Books to finish this year">
+                            <button type="submit" class="rs-goal-btn">Save</button>
+                        </div>
+                    </form>
+                    {% with msgs = get_flashed_messages(category_filter=['goal_error']) %}
+                    {% if msgs %}<p class="rs-goal-err">{{ msgs[0] }}</p>{% endif %}
+                    {% endwith %}
+                    {% with msgs = get_flashed_messages(category_filter=['goal_success']) %}
+                    {% if msgs %}<p class="rs-goal-ok">{{ msgs[0] }}</p>{% endif %}
+                    {% endwith %}
+                </div>
+                {% else %}
+                <div class="rs-goal-empty">
+                    <p class="rs-goal-empty-title">Set a finish line for {{ reading_goal.year }}</p>
+                    <p class="rs-goal-empty-sub">
+                        Choose how many books you want to finish this year.
+                        You've logged {{ reading_goal.completed }} with finish dates so far — a goal makes the rest of the year feel intentional.
+                    </p>
+                    <form class="rs-goal-form" action="{{ url_for('set_reading_goal') }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <label class="rs-goal-label" for="goalTargetNew">Books to finish</label>
+                        <div class="rs-goal-form-row">
+                            <input type="number" id="goalTargetNew" name="target_count"
+                                   class="rs-goal-input" min="1" max="500" required
+                                   placeholder="e.g. 24" aria-label="Books to finish this year">
+                            <button type="submit" class="rs-goal-btn">Set goal</button>
+                        </div>
+                    </form>
+                    {% with msgs = get_flashed_messages(category_filter=['goal_error']) %}
+                    {% if msgs %}<p class="rs-goal-err">{{ msgs[0] }}</p>{% endif %}
+                    {% endwith %}
+                </div>
+                {% endif %}
+            </section>
+
+            {% if not is_empty %}
+            <!-- ── Charts ─────────────────────────────────── -->
+            <div class="rs-charts-row" aria-label="Reading charts">
+                <div class="rs-chart-panel">
+                    <div class="rs-panel-header">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                        Books Finished Per Month
+                    </div>
+                    <canvas id="finishedMonthChart" height="200"></canvas>
+                </div>
+                <div class="rs-chart-panel">
+                    <div class="rs-panel-header">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        Rating Distribution
+                    </div>
+                    <canvas id="ratingDistChart" height="200"></canvas>
+                </div>
+                <div class="rs-chart-panel">
+                    <div class="rs-panel-header">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        Top Authors
+                    </div>
+                    <canvas id="topAuthorsChart" height="200"></canvas>
+                </div>
+            </div>
+
+            <!-- ── Reading Summary ────────────────────────── -->
+            <section class="rs-summary" aria-label="Reading summary">
+                <h2 class="rs-section-title">Reading Summary</h2>
+                <div class="rs-summary-grid">
+                    <div class="rs-summary-card">
+                        <span class="rs-summary-lbl">Average Reading Duration</span>
+                        <span class="rs-summary-val">
+                            {% if reading_summary.average_duration_days is not none %}
+                            {{ reading_summary.average_duration_days }} day{{ 's' if reading_summary.average_duration_days != 1 else '' }}
+                            {% else %}—{% endif %}
+                        </span>
+                        {% if reading_summary.sample_count == 0 %}
+                        <span class="rs-summary-hint">Needs start &amp; finish dates</span>
+                        {% endif %}
+                    </div>
+                    <div class="rs-summary-card">
+                        <span class="rs-summary-lbl">Fastest Read</span>
+                        {% if reading_summary.fastest %}
+                        <span class="rs-summary-val">{{ reading_summary.fastest.days }} day{{ 's' if reading_summary.fastest.days != 1 else '' }}</span>
+                        <span class="rs-summary-sub">{{ reading_summary.fastest.title }}</span>
+                        {% else %}
+                        <span class="rs-summary-val">—</span>
+                        {% endif %}
+                    </div>
+                    <div class="rs-summary-card">
+                        <span class="rs-summary-lbl">Longest Read</span>
+                        {% if reading_summary.longest %}
+                        <span class="rs-summary-val">{{ reading_summary.longest.days }} day{{ 's' if reading_summary.longest.days != 1 else '' }}</span>
+                        <span class="rs-summary-sub">{{ reading_summary.longest.title }}</span>
+                        {% else %}
+                        <span class="rs-summary-val">—</span>
+                        {% endif %}
+                    </div>
+                    <div class="rs-summary-card">
+                        <span class="rs-summary-lbl">Books Finished This Year</span>
+                        <span class="rs-summary-val">{{ reading_summary.finished_this_year }}</span>
+                        <span class="rs-summary-hint">Based on finish dates</span>
+                    </div>
+                </div>
+            </section>
+            {% endif %}
+
+            <!-- ── Recent Activity ────────────────────────── -->
+            <section class="timeline-panel timeline-panel--activity home-activity" aria-label="Recent activity">
+                <h2 class="timeline-panel-title">Recent Activity</h2>
+                {% if recent_activity %}
+                <ul class="timeline-list">
+                    {% for event in recent_activity %}
+                    <li class="timeline-item timeline-item--{{ event.kind }}">
+                        <div class="timeline-item-main">
+                            <span class="timeline-item-kind">
+                                {% if event.kind == 'finished' %}Finished Reading
+                                {% elif event.kind == 'started' %}Started Reading
+                                {% elif event.kind == 'added' %}Book Added
+                                {% elif event.kind == 'wild' %}Marked Wild
+                                {% else %}{{ event.kind }}{% endif %}
+                            </span>
+                            <span class="timeline-item-title">{{ event.book.title }}</span>
+                            <span class="timeline-item-sub">{{ event.book.author }}</span>
+                        </div>
+                        <div class="timeline-item-meta">
+                            <span class="timeline-item-date">{{ event.event_date.strftime('%b %d, %Y') }}</span>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="timeline-empty">{% if is_empty %}Starts, finishes, and wild picks will show up here as your library grows.{% else %}Add start or finish dates to see more of your journey here.{% endif %}</p>
+                {% endif %}
+            </section>
+
+            <!-- ── Premium Bookshelf ──────────────────────── -->
+            {% if not is_empty %}
+            <div class="lib-toolbar lib-toolbar--library">
+                <div class="lib-toolbar-left">
+                    <h2 class="db-section-lbl">Bookshelf</h2>
+                    <div class="ab-status-filter">
+                        <label for="bookshelfStatusFilter" class="ab-status-filter-lbl">Status</label>
+                        <select id="bookshelfStatusFilter" class="db-sort" aria-label="Filter bookshelf by reading status">
+                            <option value="">All statuses</option>
+                            {% for value, label in reading_statuses %}
+                            <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                {% include 'components/view_toggle.html' %}
+            </div>
+            <div id="bookshelf" class="lib-shelf lib-shelf--grid">
+                {% for book in books|sort(attribute='date_added', reverse=true) %}
+                {% include 'components/book_card.html' %}
+                {% endfor %}
+            </div>
+            {% endif %}
 
             <!-- ── Toolbar ────────────────────────────────── -->
             <div class="db-toolbar">
@@ -98,6 +449,12 @@
                         <svg class="db-search-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                         <input id="authorSearch" class="db-search" placeholder="Search authors or titles…" aria-label="Search">
                     </div>
+                    <select id="statusFilter" class="db-sort" aria-label="Filter by reading status">
+                        <option value="">All statuses</option>
+                        {% for value, label in reading_statuses %}
+                        <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
                     <select id="sortSelect" class="db-sort" aria-label="Sort">
                         <option value="name_asc">Name (A–Z)</option>
                         <option value="count_desc">Most Books</option>
@@ -113,8 +470,8 @@
                     <div class="db-empty-icon">
                         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
                     </div>
-                    <h3 class="db-empty-title">Your library starts here.</h3>
-                    <p class="db-empty-sub">Track books, discover favourite authors, and build<br>your personal reading archive.</p>
+                    <h3 class="db-empty-title">Every library begins with a single shelf.</h3>
+                    <p class="db-empty-sub">Add the books that matter to you — ratings, quotes, and your reading year will grow from there.</p>
                     <a href="{{ url_for('add') }}?next={{ request.path }}" class="db-cta db-empty-cta open-add-modal">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                         Add Your First Book
@@ -157,38 +514,292 @@
         </div><!-- /.db-layout -->
     </div><!-- /.db-shell -->
 
+    <!-- Quote Modal (bookshelf hover actions) -->
+    <div id="quoteModal" class="modal-overlay" aria-hidden="true">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="quoteModalTitle">
+        <button class="modal-close" aria-label="Close">×</button>
+        <h2 id="quoteModalTitle">Save a Passage</h2>
+        <p id="qmBookLabel" style="font-size:0.85rem;color:#64748B;margin:-6px 0 16px;"></p>
+        <form method="POST" action="{{ url_for('add_quote') }}" class="rating-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="book_id" id="qmBookId" value="">
+            <div class="form-group">
+                <label>Passage</label>
+                <textarea name="text" class="qm-textarea" placeholder="Enter the passage here…" maxlength="2000" required></textarea>
+            </div>
+            <div class="form-group">
+                <label>Page Reference <span style="font-weight:400;color:#94A3B8;">(optional)</span></label>
+                <input type="text" name="page_ref" placeholder="e.g. p. 142" maxlength="20">
+            </div>
+            <div style="display:flex; gap:10px; margin-top:12px;">
+                <button type="submit" class="btn-primary">Save Passage</button>
+            </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Add Book Modal -->
+    <div id="addModal" class="modal-overlay" aria-hidden="true">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="addModalTitle">
+        <button class="modal-close" aria-label="Close">×</button>
+        <h2 id="addModalTitle">Rate a New Book</h2>
+        <form method="POST" action="{{ url_for('add') }}" class="rating-form" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="next" value="{{ request.path }}">
+            {% include 'components/book_meta_search.html' %}
+            <div class="form-group">
+                <label>Author</label>
+                <input type="text" name="author" placeholder="e.g. F. Scott Fitzgerald" required>
+            </div>
+            <div class="form-group">
+                <label>Reading Status</label>
+                <select name="reading_status" class="reading-status-select">
+                    {% for value, label in reading_statuses %}
+                    <option value="{{ value }}" {% if value == 'finished' %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group timeline-field timeline-field--start" data-timeline="start">
+                <label>Started Reading <span class="timeline-hint timeline-hint--recommended" hidden>(recommended)</span></label>
+                <input type="date" name="started_reading_at" class="timeline-start-input">
+            </div>
+            <div class="form-group timeline-field timeline-field--finish" data-timeline="finish">
+                <label>Finished Reading <span class="timeline-hint timeline-hint--required">(required)</span><span class="timeline-hint timeline-hint--optional" hidden>(optional)</span></label>
+                <input type="date" name="finished_reading_at" class="timeline-finish-input" required>
+            </div>
+            <div class="form-group">
+                <label>My Rating <span class="rating-optional-hint" hidden>(optional)</span></label>
+                <select name="rating" class="rating-select">
+                    <option value="">No rating yet</option>
+                    <option value="5" selected>★★★★★ - Amazing</option>
+                    <option value="4">★★★★☆ - Great</option>
+                    <option value="3">★★★☆☆ - Good</option>
+                    <option value="2">★★☆☆☆ - Okay</option>
+                    <option value="1">★☆☆☆☆ - Bad</option>
+                </select>
+            </div>
+            <div class="form-group form-group--check">
+                <label class="wild-check">
+                    <input type="checkbox" name="is_wild" value="1">
+                    <span>🔥 Wild</span>
+                </label>
+            </div>
+            <div class="form-group cover-upload">
+                <label>Upload Cover <span class="cover-upload-hint">(optional)</span></label>
+                <div class="cover-upload-row">
+                    <div class="cover-preview" id="addCoverPreview">
+                        <div class="book-cover-placeholder book-cover-placeholder--preview" id="addCoverPh">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                        </div>
+                        <img id="addCoverImg" class="cover-preview-img" alt="" hidden>
+                    </div>
+                    <div class="cover-upload-controls">
+                        <input type="file" name="cover" id="addCoverInput" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+                        <p class="cover-upload-note">JPG, PNG, or WEBP · max 5 MB</p>
+                    </div>
+                </div>
+            </div>
+            <div style="display:flex; gap:10px; margin-top:12px;">
+                <button type="submit" class="btn-primary">Save to Library</button>
+            </div>
+        </form>
+      </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/book_metadata_search.js') }}"></script>
+    {% if not is_empty %}
     <script>
-        // Modal open/close for add-book popup
+    (function(){
+        const PRIMARY   = '#6C63FF';
+        const PRIMARY_L = 'rgba(108,99,255,0.15)';
+        const GREEN     = '#16A34A';
+        const GREEN_L   = 'rgba(22,163,74,0.15)';
+        const AMBER     = '#D97706';
+        const AMBER_L   = 'rgba(217,119,6,0.18)';
+        const GRID      = 'rgba(0,0,0,0.06)';
+        const TEXT      = '#6B7280';
+
+        Chart.defaults.font.family = "'Inter', ui-sans-serif, system-ui, sans-serif";
+        Chart.defaults.color = TEXT;
+
+        var finishedEl = document.getElementById('finishedMonthChart');
+        if (finishedEl) {
+            new Chart(finishedEl, {
+                type: 'line',
+                data: {
+                    labels: {{ charts.finished_per_month.labels_js | safe }},
+                    datasets: [{
+                        label: 'Books finished',
+                        data: {{ charts.finished_per_month.data_js | safe }},
+                        borderColor: GREEN,
+                        backgroundColor: GREEN_L,
+                        borderWidth: 2,
+                        pointRadius: 4,
+                        pointBackgroundColor: GREEN,
+                        fill: true,
+                        tension: 0.35,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { color: GRID } },
+                        y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, grid: { color: GRID } }
+                    }
+                }
+            });
+        }
+
+        var ratingEl = document.getElementById('ratingDistChart');
+        if (ratingEl) {
+            new Chart(ratingEl, {
+                type: 'bar',
+                data: {
+                    labels: {{ charts.rating_distribution.labels_js | safe }},
+                    datasets: [{
+                        label: 'Books',
+                        data: {{ charts.rating_distribution.data_js | safe }},
+                        backgroundColor: AMBER_L,
+                        borderColor: AMBER,
+                        borderWidth: 1.5,
+                        borderRadius: 6,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, grid: { color: GRID } }
+                    }
+                }
+            });
+        }
+
+        var authorsEl = document.getElementById('topAuthorsChart');
+        if (authorsEl) {
+            new Chart(authorsEl, {
+                type: 'bar',
+                data: {
+                    labels: {{ charts.top_authors.labels_js | safe }},
+                    datasets: [{
+                        label: 'Books',
+                        data: {{ charts.top_authors.data_js | safe }},
+                        backgroundColor: PRIMARY_L,
+                        borderColor: PRIMARY,
+                        borderWidth: 1.5,
+                        borderRadius: 6,
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, grid: { color: GRID } },
+                        y: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+    })();
+    </script>
+    {% endif %}
+    <script>
+        // Modal open/close for add-book + quote popups
         (function(){
-            function openModal(href){
-                var overlay = document.getElementById('addModal');
+            function openOverlay(overlay){
                 if(!overlay) return;
                 overlay.classList.add('visible');
                 overlay.setAttribute('aria-hidden','false');
                 document.body.style.overflow='hidden';
-                var nextInput = overlay.querySelector('input[name=next]');
-                if(nextInput){
-                    try{
-                        var u = new URL(href, window.location.origin);
-                        if(u.searchParams.get('next')) nextInput.value = u.searchParams.get('next');
-                        else nextInput.value = window.location.pathname;
-                    }catch(e){ nextInput.value = window.location.pathname; }
-                }
             }
-            function closeModal(){
-                var overlay = document.getElementById('addModal');
+            function closeOverlay(overlay){
                 if(!overlay) return;
                 overlay.classList.remove('visible');
                 overlay.setAttribute('aria-hidden','true');
                 document.body.style.overflow='';
             }
             document.addEventListener('click', function(e){
-                var t = e.target.closest('.open-add-modal, .add-link');
-                if(t){ e.preventDefault(); openModal(t.getAttribute('href') || window.location.href); }
-                if(e.target.id === 'addModal' && e.target.classList.contains('visible')) closeModal();
-                if(e.target.closest('.modal-close')) closeModal();
+                var addTrigger = e.target.closest('.open-add-modal, .add-link');
+                if(addTrigger){
+                    e.preventDefault();
+                    var overlay = document.getElementById('addModal');
+                    openOverlay(overlay);
+                    var href = addTrigger.getAttribute('href') || window.location.href;
+                    var nextInput = overlay && overlay.querySelector('input[name=next]');
+                    if(nextInput){
+                        try{
+                            var u = new URL(href, window.location.origin);
+                            nextInput.value = u.searchParams.get('next') || window.location.pathname;
+                        }catch(err){ nextInput.value = window.location.pathname; }
+                    }
+                    return;
+                }
+                var quoteTrigger = e.target.closest('.open-quote-modal');
+                if(quoteTrigger){
+                    var qOverlay = document.getElementById('quoteModal');
+                    openOverlay(qOverlay);
+                    document.getElementById('qmBookId').value = quoteTrigger.getAttribute('data-book-id');
+                    document.getElementById('qmBookLabel').textContent =
+                        quoteTrigger.getAttribute('data-book-title') + ' · ' + quoteTrigger.getAttribute('data-author');
+                    qOverlay.querySelector('textarea').value = '';
+                    qOverlay.querySelector('[name=page_ref]').value = '';
+                    return;
+                }
+                if(e.target.closest('.modal-close')){
+                    closeOverlay(e.target.closest('.modal-overlay'));
+                    return;
+                }
+                if(e.target.classList.contains('modal-overlay') && e.target.classList.contains('visible')){
+                    closeOverlay(e.target);
+                }
             });
-            document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeModal(); });
+            document.addEventListener('keydown', function(e){
+                if(e.key === 'Escape'){
+                    document.querySelectorAll('.modal-overlay.visible').forEach(function(m){ closeOverlay(m); });
+                }
+            });
+        })();
+
+        // Bookshelf status filter + grid/list preference
+        (function(){
+            var filter = document.getElementById('bookshelfStatusFilter');
+            var cards = document.querySelectorAll('#bookshelf .lib-card');
+            if(filter){
+                filter.addEventListener('change', function(){
+                    var status = filter.value;
+                    cards.forEach(function(card){
+                        card.hidden = !!(status && card.getAttribute('data-status') !== status);
+                    });
+                });
+            }
+            var KEY = 'kwalitec-library-view';
+            var shelf = document.getElementById('bookshelf');
+            var toggle = document.getElementById('viewToggle');
+            if(!shelf || !toggle) return;
+            function apply(view){
+                view = view === 'list' ? 'list' : 'grid';
+                shelf.classList.remove('lib-shelf--grid', 'lib-shelf--list');
+                shelf.classList.add('lib-shelf--' + view);
+                toggle.querySelectorAll('.lib-view-btn').forEach(function(btn){
+                    var on = btn.getAttribute('data-view') === view;
+                    btn.classList.toggle('is-active', on);
+                    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+                });
+                try { localStorage.setItem(KEY, view); } catch(e) {}
+            }
+            var saved = 'grid';
+            try { saved = localStorage.getItem(KEY) || 'grid'; } catch(e) {}
+            apply(saved);
+            toggle.addEventListener('click', function(e){
+                var btn = e.target.closest('.lib-view-btn');
+                if(!btn) return;
+                apply(btn.getAttribute('data-view'));
+            });
         })();
 
         // Client-side authors data, sorting and search
@@ -196,6 +807,7 @@
         const authorsListEl = document.getElementById('authorsList');
         const searchInput = document.getElementById('authorSearch');
         const sortSelect = document.getElementById('sortSelect');
+        const statusFilter = document.getElementById('statusFilter');
 
         // Snackbar
         function showSnackbar(msg) {
@@ -237,7 +849,7 @@
 
         function renderAuthors(list) {
             if (!list || list.length === 0) {
-                authorsListEl.innerHTML = `<div class="db-empty"><div class="db-empty-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div><h3 class="db-empty-title">No results found.</h3><p class="db-empty-sub">Try a different search term.</p></div>`;
+                authorsListEl.innerHTML = `<div class="db-empty"><div class="db-empty-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div><h3 class="db-empty-title">No authors match that search.</h3><p class="db-empty-sub">Try another name or title — your full library is still here.</p></div>`;
                 return;
             }
             const q = searchInput ? searchInput.value : '';
@@ -263,7 +875,9 @@
 
         function getFilteredSorted() {
             const q = searchInput ? searchInput.value.toLowerCase() : '';
+            const status = statusFilter ? statusFilter.value : '';
             let filtered = authorsData.filter(a => {
+                if (status && !(a.statuses || []).includes(status)) return false;
                 if (!q) return true;
                 return (a.name && a.name.toLowerCase().includes(q)) ||
                        (a.titles && a.titles.some(t => (t||'').toLowerCase().includes(q)));
@@ -282,6 +896,7 @@
         renderAuthors(getFilteredSorted());
         if (searchInput) searchInput.addEventListener('input', () => renderAuthors(getFilteredSorted()));
         if (sortSelect) sortSelect.addEventListener('change', () => renderAuthors(getFilteredSorted()));
+        if (statusFilter) statusFilter.addEventListener('change', () => renderAuthors(getFilteredSorted()));
 
         // Quote card: load once per page load
         (function(){
@@ -313,38 +928,60 @@
                 .catch(function(){ card.style.display = 'none'; });
         })();
     </script>
+    <script>
+    (function(){
+        var input = document.getElementById('addCoverInput');
+        var img = document.getElementById('addCoverImg');
+        var ph = document.getElementById('addCoverPh');
+        if(input){
+            input.addEventListener('change', function(){
+                var file = input.files && input.files[0];
+                if(!file){
+                    img.hidden = true; img.removeAttribute('src');
+                    if(ph) ph.hidden = false;
+                    return;
+                }
+                var url = URL.createObjectURL(file);
+                img.onload = function(){ URL.revokeObjectURL(url); };
+                img.src = url; img.hidden = false;
+                if(ph) ph.hidden = true;
+            });
+        }
 
-    <!-- Add Book Modal -->
-    <div id="addModal" class="modal-overlay" aria-hidden="true">
-      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="addModalTitle">
-        <button class="modal-close" aria-label="Close">×</button>
-        <h2 id="addModalTitle">Rate a New Book</h2>
-        <form method="POST" action="{{ url_for('add') }}" class="rating-form">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="hidden" name="next" value="{{ request.path }}">
-            <div class="form-group">
-                <label>Book Title</label>
-                <input type="text" name="title" placeholder="e.g. The Great Gatsby" required>
-            </div>
-            <div class="form-group">
-                <label>Author</label>
-                <input type="text" name="author" placeholder="e.g. F. Scott Fitzgerald" required>
-            </div>
-            <div class="form-group">
-                <label>My Rating</label>
-                <select name="rating">
-                    <option value="5">★★★★★ - Amazing</option>
-                    <option value="4">★★★★☆ - Great</option>
-                    <option value="3">★★★☆☆ - Good</option>
-                    <option value="2">★★☆☆☆ - Okay</option>
-                    <option value="1">★☆☆☆☆ - Bad</option>
-                </select>
-            </div>
-            <div style="display:flex; gap:10px; margin-top:12px;">
-                <button type="submit" class="btn-primary">Save to Library</button>
-            </div>
-        </form>
-      </div>
-    </div>
-</body>
-</html>
+        document.querySelectorAll('.reading-status-select').forEach(function(statusEl){
+            var form = statusEl.closest('form');
+            if(!form) return;
+            var ratingEl = form.querySelector('.rating-select');
+            var hint = form.querySelector('.rating-optional-hint');
+            var startField = form.querySelector('.timeline-field--start');
+            var finishField = form.querySelector('.timeline-field--finish');
+            var finishInput = form.querySelector('.timeline-finish-input');
+            var startRec = form.querySelector('.timeline-hint--recommended');
+            var finishReq = form.querySelector('.timeline-hint--required');
+            var finishOpt = form.querySelector('.timeline-hint--optional');
+            var showStart = {want_to_read:1, reading:1, finished:1, dnf:1, rereading:1};
+            var showFinish = {want_to_read:1, finished:1, dnf:1, rereading:1};
+            function apply(){
+                var status = statusEl.value;
+                var finished = status === 'finished';
+                if(ratingEl){
+                    ratingEl.required = finished;
+                    if(finished && !ratingEl.value) ratingEl.value = '5';
+                }
+                if(hint) hint.hidden = finished;
+                if(startField) startField.hidden = !showStart[status];
+                if(finishField) finishField.hidden = !showFinish[status];
+                if(finishInput) finishInput.required = finished;
+                if(startRec) startRec.hidden = status !== 'reading';
+                if(finishReq) finishReq.hidden = !finished;
+                if(finishOpt) finishOpt.hidden = finished || !showFinish[status];
+            }
+            statusEl.addEventListener('change', apply);
+            apply();
+        });
+    })();
+    </script>
+    <script>
+    if (window.BookMetaSearch) { BookMetaSearch.initAll(); }
+    </script>
+{% endblock %}

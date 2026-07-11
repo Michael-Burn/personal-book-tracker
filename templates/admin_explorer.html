@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}User Explorer — Admin Hub{% endblock %}
+
+{% block body_class_attr %} class="hub-body"{% endblock %}
+
+{% block body %}
+<div class="hub-wrap">
+    {% set nav_variant='admin' %}
+    {% include 'components/navbar.html' %}
+
+    <div class="hub-page-header">
+        <div>
+            <h1 class="hub-page-title">User Explorer</h1>
+            <p class="hub-page-sub">Search and sort every account — book, quote, wild, and reading counts.</p>
+        </div>
+        <span class="hub-page-count">{{ rows|length }} user{{ 's' if rows|length != 1 else '' }}</span>
+    </div>
+
+    <form class="hub-toolbar" method="GET" action="{{ url_for('admin_explorer') }}">
+        <label class="hub-toolbar-search">
+            <span class="visually-hidden">Search users</span>
+            <input type="search" name="q" value="{{ q }}" placeholder="Search username…" class="hub-input" autocomplete="off">
+        </label>
+        <label class="hub-toolbar-field">
+            <span>Sort</span>
+            <select name="sort" class="hub-select">
+                <option value="books" {% if sort == 'books' %}selected{% endif %}>Books</option>
+                <option value="quotes" {% if sort == 'quotes' %}selected{% endif %}>Quotes</option>
+                <option value="wild" {% if sort == 'wild' %}selected{% endif %}>Wild</option>
+                <option value="reading" {% if sort == 'reading' %}selected{% endif %}>Currently reading</option>
+                <option value="username" {% if sort == 'username' %}selected{% endif %}>Username</option>
+                <option value="joined" {% if sort == 'joined' %}selected{% endif %}>Joined</option>
+                <option value="status" {% if sort == 'status' %}selected{% endif %}>Status</option>
+            </select>
+        </label>
+        <label class="hub-toolbar-field">
+            <span>Order</span>
+            <select name="order" class="hub-select">
+                <option value="desc" {% if order == 'desc' %}selected{% endif %}>Descending</option>
+                <option value="asc" {% if order == 'asc' %}selected{% endif %}>Ascending</option>
+            </select>
+        </label>
+        <button type="submit" class="admin-btn admin-btn--secondary">Apply</button>
+        {% if q %}
+        <a href="{{ url_for('admin_explorer') }}" class="hub-toolbar-clear">Clear</a>
+        {% endif %}
+    </form>
+
+    <div class="hub-table-panel">
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Joined</th>
+                        <th>Books</th>
+                        <th>Quotes</th>
+                        <th>Wild</th>
+                        <th>Reading</th>
+                        <th>Status</th>
+                        <th class="admin-th-actions">Open</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for row in rows %}
+                {% set user = row.user %}
+                <tr class="admin-row{% if not user.is_active %} admin-row--disabled{% endif %}">
+                    <td class="admin-td-name">
+                        <div class="admin-avatar">
+                            {% if user.avatar %}
+                            <img src="{{ user.avatar }}" alt="{{ user.username[0]|upper }}">
+                            {% else %}
+                            <span>{{ user.username[0]|upper }}</span>
+                            {% endif %}
+                        </div>
+                        <span class="admin-username">
+                            <a href="{{ url_for('admin_user_detail', user_id=user.id) }}">{{ user.username }}</a>
+                        </span>
+                        {% if user.username == 'Admin' %}
+                        <span class="admin-badge admin-badge--admin">Admin</span>
+                        {% endif %}
+                    </td>
+                    <td class="admin-td-meta">{{ user.created_at.strftime('%b %d, %Y') }}</td>
+                    <td class="admin-td-meta">{{ row.book_count }}</td>
+                    <td class="admin-td-meta">{{ row.quote_count }}</td>
+                    <td class="admin-td-meta">{{ row.wild_count }}</td>
+                    <td class="admin-td-meta">{{ row.reading_count }}</td>
+                    <td>
+                        {% if user.is_active %}
+                        <span class="admin-badge admin-badge--active">Active</span>
+                        {% else %}
+                        <span class="admin-badge admin-badge--inactive">Disabled</span>
+                        {% endif %}
+                    </td>
+                    <td class="admin-td-actions">
+                        <a href="{{ url_for('admin_user_detail', user_id=user.id) }}" class="admin-btn admin-btn--secondary admin-btn-link">View</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="hub-empty">No users match this search.</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
