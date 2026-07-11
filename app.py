@@ -40,7 +40,7 @@ from services.share_engine import ShareEngine, ShareFormat  # noqa: E402
 from services.book_metadata_service import BookMetadataService  # noqa: E402
 from domain.reading_status import ReadingStatus  # noqa: E402
 from config.media_settings import MediaSettings  # noqa: E402
-from utils import has_rating, since_date, safe_next_url  # noqa: E402
+from utils import has_rating, since_date, safe_next_url, sort_books_by_date_added  # noqa: E402
 
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
@@ -770,7 +770,7 @@ def index():
 @app.route('/authors')
 @login_required
 def authors_page():
-    books = (
+    books = sort_books_by_date_added(
         Book.query
         .filter_by(user_id=current_user.id)
         .options(selectinload(Book.quotes))
@@ -853,7 +853,7 @@ def set_reading_goal():
 @app.route('/author/<author>')
 @login_required
 def author_books(author):
-    books = (
+    books = sort_books_by_date_added(
         Book.query
         .filter_by(author=author, user_id=current_user.id)
         .options(selectinload(Book.quotes))
@@ -1234,14 +1234,7 @@ def admin_user_detail(user_id):
         .filter_by(id=user_id)
         .first_or_404()
     )
-    books = list(user.books)
-    books.sort(
-        key=lambda b: (
-            b.date_added is None,
-            -(b.date_added.timestamp() if b.date_added else 0),
-            (b.title or '').lower(),
-        )
-    )
+    books = sort_books_by_date_added(user.books)
     dash = statistics_service.reading_dashboard(
         books, reading_service
     )
@@ -1299,7 +1292,9 @@ def admin_library():
     elif wild_raw in {'0', 'false', 'no'}:
         query = query.filter(Book.is_wild.is_(False))
 
-    books = query.order_by(Book.date_added.desc(), Book.id.desc()).all()
+    books = sort_books_by_date_added(
+        query.all()
+    )
     users = User.query.order_by(User.username.asc()).all()
     authors = [
         row[0]

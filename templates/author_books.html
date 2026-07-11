@@ -70,7 +70,7 @@
 
             <!-- ── Premium bookshelf ────────────────────────── -->
             <div id="bookshelf" class="lib-shelf lib-shelf--grid" data-empty-author="{{ author }}">
-                {% for book in books|sort(attribute='date_added', reverse=true) %}
+                {% for book in books %}
                 {% with show_author=false %}
                 {% include 'components/book_card.html' %}
                 {% endwith %}

@@ -433,7 +433,7 @@
                 {% include 'components/view_toggle.html' %}
             </div>
             <div id="bookshelf" class="lib-shelf lib-shelf--grid">
-                {% for book in books|sort(attribute='date_added', reverse=true) %}
+                {% for book in books %}
                 {% include 'components/book_card.html' %}
                 {% endfor %}
             </div>
