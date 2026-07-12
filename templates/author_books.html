@@ -105,7 +105,7 @@
       <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="quoteModalTitle">
         <button class="modal-close" aria-label="Close">×</button>
         <h2 id="quoteModalTitle">Save a Passage</h2>
-        <p id="qmBookLabel" style="font-size:0.85rem;color:#64748B;margin:-6px 0 16px;"></p>
+        <p id="qmBookLabel" class="modal-sublabel"></p>
         <form method="POST" action="{{ url_for('add_quote') }}" class="rating-form">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="book_id" id="qmBookId" value="">
@@ -114,7 +114,7 @@
                 <textarea name="text" class="qm-textarea" placeholder="Enter the passage here…" maxlength="2000" required></textarea>
             </div>
             <div class="form-group">
-                <label>Page Reference <span style="font-weight:400;color:#94A3B8;">(optional)</span></label>
+                <label>Page Reference <span class="field-hint-inline">(optional)</span></label>
                 <input type="text" name="page_ref" placeholder="e.g. p. 142" maxlength="20">
             </div>
             <div style="display:flex; gap:10px; margin-top:12px;">

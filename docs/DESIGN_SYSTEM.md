@@ -55,6 +55,24 @@ Prefer:
 
 Legacy aliases (`--color-bg`, `--color-text-primary`, `--color-primary-dark`, …) remain for older rules in `style.css`. Prefer the canonical names above for new work.
 
+### Theme system (v1.1)
+
+Appearance modes: **Light**, **Dark**, **Follow System** (default).
+
+| Layer | Responsibility |
+|-------|----------------|
+| `html[data-theme="light\|dark"]` | Active resolved theme |
+| `html[data-theme-pref]` | Saved preference (`light` / `dark` / `system`) |
+| `static/js/theme.js` | Theme Manager (persist, apply, system watch, charts) |
+| `design-system.css` | Light + dark token sets |
+| `localStorage` key `kwalitec-theme` | Client-only preference (no DB) |
+
+Semantic aliases also available: `--bg`, `--surface`, `--surface-alt`, `--card`, `--primary`, `--text`, `--border`, `--input`, `--chart-grid`, `--chart-text`, etc.
+
+Dark palette is intentional (charcoal surfaces, not inverted light). Book covers and uploaded images are never recolored.
+
+Settings → Appearance controls preference; changes apply immediately with colour-only transitions.
+
 ---
 
 ## Spacing

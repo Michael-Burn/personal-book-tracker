@@ -4,12 +4,31 @@
     <meta charset="{% block charset %}UTF-8{% endblock %}">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}Kwalitec Library{% endblock %}</title>
+    {# Apply saved theme before CSS paint to avoid flash #}
+    <script>
+    (function () {
+        try {
+            var key = 'kwalitec-theme';
+            var pref = localStorage.getItem(key) || 'system';
+            if (pref !== 'light' && pref !== 'dark' && pref !== 'system') pref = 'system';
+            var dark = pref === 'dark' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            var theme = dark ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', theme);
+            document.documentElement.setAttribute('data-theme-pref', pref);
+            document.documentElement.style.colorScheme = theme;
+        } catch (e) {
+            document.documentElement.setAttribute('data-theme', 'light');
+            document.documentElement.setAttribute('data-theme-pref', 'system');
+        }
+    })();
+    </script>
     <link rel="stylesheet" href="{{ url_for('static', filename='design-system.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     {% block extra_head %}{% endblock %}
 </head>
 <body{% block body_attrs %}{% endblock %}{% block body_class_attr %}{% endblock %}>
 {% block body %}{% endblock %}
+<script src="{{ url_for('static', filename='js/theme.js') }}"></script>
 {% block scripts %}{% endblock %}
 </body>
 </html>

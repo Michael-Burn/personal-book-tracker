@@ -435,7 +435,12 @@ def change_password():
             logout_user()
             flash('Password updated. Please sign in with your new password.', 'pw_success')
             return redirect(url_for('login'))
-    return render_template('settings.html', error=error)
+    return render_template(
+        'settings.html',
+        error=error,
+        security_questions=SECURITY_QUESTIONS,
+        user_security_question=current_user.security_question,
+    )
 
 
 @app.route('/settings/security-question', methods=['POST'])

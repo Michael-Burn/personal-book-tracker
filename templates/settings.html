@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Change Password — Kwalitec Library{% endblock %}
+{% block title %}Settings — Kwalitec Library{% endblock %}
 
 {% block charset %}utf-8{% endblock %}
 
@@ -12,6 +12,45 @@
     <!-- Nav -->
     {% set nav_variant='settings' %}
     {% include 'components/navbar.html' %}
+
+    <!-- ── Appearance ───────────────────────────────────────── -->
+    <section class="sett-panel" aria-labelledby="settAppearanceTitle">
+        <div class="sett-panel-info">
+            <div class="sett-panel-icon sett-icon--amber">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+            </div>
+            <h2 class="sett-panel-title" id="settAppearanceTitle">Appearance</h2>
+            <p class="sett-panel-desc">Choose Light, Dark, or Follow System. Your preference is saved on this device only.</p>
+        </div>
+        <div class="sett-panel-form">
+            <fieldset class="sett-theme-options" role="radiogroup" aria-label="Theme">
+                <legend class="sett-theme-legend">Theme</legend>
+                <label class="sett-theme-option">
+                    <input type="radio" name="kwalitec-theme" value="light" data-theme-option="light">
+                    <span class="sett-theme-option-copy">
+                        <span class="sett-theme-option-label">Light</span>
+                        <span class="sett-theme-option-desc">Bright surfaces and soft lavender atmosphere.</span>
+                    </span>
+                </label>
+                <label class="sett-theme-option">
+                    <input type="radio" name="kwalitec-theme" value="dark" data-theme-option="dark">
+                    <span class="sett-theme-option-copy">
+                        <span class="sett-theme-option-label">Dark</span>
+                        <span class="sett-theme-option-desc">Premium charcoal palette designed for low light.</span>
+                    </span>
+                </label>
+                <label class="sett-theme-option">
+                    <input type="radio" name="kwalitec-theme" value="system" data-theme-option="system">
+                    <span class="sett-theme-option-copy">
+                        <span class="sett-theme-option-label">Follow System</span>
+                        <span class="sett-theme-option-desc">Match your operating system appearance automatically.</span>
+                    </span>
+                </label>
+            </fieldset>
+        </div>
+    </section>
+
+    <div class="sett-divider" role="presentation"></div>
 
     <!-- ── Change Password panel ──────────────────────────── -->
     <section class="sett-panel">

@@ -99,86 +99,94 @@
     {% if active_view == 'analytics' and not is_empty %}
     <script>
     (function(){
-        const PRIMARY   = '#6C63FF';
-        const PRIMARY_L = 'rgba(108,99,255,0.15)';
-        const GREEN     = '#16A34A';
-        const GREEN_L   = 'rgba(22,163,74,0.15)';
-        const AMBER     = '#D97706';
-        const AMBER_L   = 'rgba(217,119,6,0.18)';
-        const GRID      = 'rgba(0,0,0,0.06)';
-        const TEXT      = '#6B7280';
-
+        var theme = window.KwalitecTheme;
+        var c = theme ? theme.getChartColors() : {
+            primary: '#5B54E8', primarySoft: 'rgba(91,84,232,0.15)',
+            success: '#16A34A', successSoft: 'rgba(22,163,74,0.15)',
+            warning: '#D97706', warningSoft: 'rgba(217,119,6,0.18)',
+            grid: 'rgba(0,0,0,0.06)', text: '#6B7280'
+        };
+        if (theme) theme.applyChartDefaults();
         Chart.defaults.font.family = "'Inter', ui-sans-serif, system-ui, sans-serif";
-        Chart.defaults.color = TEXT;
+        Chart.defaults.color = c.text;
+
+        function scaleOpts(showXGrid) {
+            return {
+                x: { grid: showXGrid ? { color: c.grid } : { display: false }, ticks: { color: c.text } },
+                y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0, color: c.text }, grid: { color: c.grid } }
+            };
+        }
 
         var finishedEl = document.getElementById('finishedMonthChart');
         if (finishedEl) {
-            new Chart(finishedEl, {
+            var finishedChart = new Chart(finishedEl, {
                 type: 'line',
                 data: {
                     labels: {{ charts.finished_per_month.labels_js | safe }},
                     datasets: [{
                         label: 'Books finished',
                         data: {{ charts.finished_per_month.data_js | safe }},
-                        borderColor: GREEN,
-                        backgroundColor: GREEN_L,
+                        borderColor: c.success,
+                        backgroundColor: c.successSoft,
                         borderWidth: 2,
                         pointRadius: 4,
-                        pointBackgroundColor: GREEN,
+                        pointBackgroundColor: c.success,
                         fill: true,
                         tension: 0.35,
+                        _kwTheme: 'success'
                     }]
                 },
                 options: {
                     responsive: true,
                     plugins: { legend: { display: false } },
-                    scales: {
-                        x: { grid: { color: GRID } },
-                        y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, grid: { color: GRID } }
-                    }
+                    scales: scaleOpts(true)
                 }
             });
+            if (theme) theme.registerChart(finishedChart);
         }
 
         var ratingEl = document.getElementById('ratingDistChart');
         if (ratingEl) {
-            new Chart(ratingEl, {
+            var ratingChart = new Chart(ratingEl, {
                 type: 'bar',
                 data: {
                     labels: {{ charts.rating_distribution.labels_js | safe }},
                     datasets: [{
                         label: 'Books',
                         data: {{ charts.rating_distribution.data_js | safe }},
-                        backgroundColor: AMBER_L,
-                        borderColor: AMBER,
+                        backgroundColor: c.warningSoft,
+                        borderColor: c.warning,
                         borderWidth: 1.5,
                         borderRadius: 6,
+                        _kwTheme: 'warning'
                     }]
                 },
                 options: {
                     responsive: true,
                     plugins: { legend: { display: false } },
                     scales: {
-                        x: { grid: { display: false } },
-                        y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, grid: { color: GRID } }
+                        x: { grid: { display: false }, ticks: { color: c.text } },
+                        y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0, color: c.text }, grid: { color: c.grid } }
                     }
                 }
             });
+            if (theme) theme.registerChart(ratingChart);
         }
 
         var authorsEl = document.getElementById('topAuthorsChart');
         if (authorsEl) {
-            new Chart(authorsEl, {
+            var authorsChart = new Chart(authorsEl, {
                 type: 'bar',
                 data: {
                     labels: {{ charts.top_authors.labels_js | safe }},
                     datasets: [{
                         label: 'Books',
                         data: {{ charts.top_authors.data_js | safe }},
-                        backgroundColor: PRIMARY_L,
-                        borderColor: PRIMARY,
+                        backgroundColor: c.primarySoft,
+                        borderColor: c.primary,
                         borderWidth: 1.5,
                         borderRadius: 6,
+                        _kwTheme: 'primary'
                     }]
                 },
                 options: {
@@ -186,11 +194,12 @@
                     responsive: true,
                     plugins: { legend: { display: false } },
                     scales: {
-                        x: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, grid: { color: GRID } },
-                        y: { grid: { display: false } }
+                        x: { beginAtZero: true, ticks: { stepSize: 1, precision: 0, color: c.text }, grid: { color: c.grid } },
+                        y: { grid: { display: false }, ticks: { color: c.text } }
                     }
                 }
             });
+            if (theme) theme.registerChart(authorsChart);
         }
     })();
     </script>
