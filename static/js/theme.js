@@ -49,6 +49,7 @@
         } catch (e) { /* older browsers */ }
         refreshCharts();
         syncControls(pref);
+        updateNavThemeToggle(pref);
     }
 
     function setPreference(pref) {
@@ -170,6 +171,31 @@
         dispatchChange('system', resolved);
     }
 
+    var CYCLE_ORDER = ['light', 'dark', 'system'];
+    var CYCLE_LABELS = { light: 'Light', dark: 'Dark', system: 'System' };
+
+    function updateNavThemeToggle(pref) {
+        var btn = document.getElementById('navThemeToggle');
+        if (!btn) return;
+        var label = btn.querySelector('.theme-label');
+        if (label) label.textContent = CYCLE_LABELS[pref] || '';
+        btn.setAttribute('data-current-pref', pref || 'system');
+        btn.setAttribute('title', 'Theme: ' + (CYCLE_LABELS[pref] || 'System') + ' — click to cycle');
+    }
+
+    function bindNavThemeToggle() {
+        var btn = document.getElementById('navThemeToggle');
+        if (!btn || btn._kwThemeBound) return;
+        btn._kwThemeBound = true;
+        btn.addEventListener('click', function () {
+            var current = getPreference();
+            var idx = CYCLE_ORDER.indexOf(current);
+            var next = CYCLE_ORDER[(idx + 1) % CYCLE_ORDER.length];
+            setPreference(next);
+        });
+        updateNavThemeToggle(getPreference());
+    }
+
     function bindControls(root) {
         root = root || document;
         var nodes = root.querySelectorAll('[data-theme-option]');
@@ -189,6 +215,7 @@
                 });
             })(nodes[i]);
         }
+        bindNavThemeToggle();
         syncControls();
     }
 

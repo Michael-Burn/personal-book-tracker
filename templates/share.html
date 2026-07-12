@@ -164,7 +164,7 @@
                     {% for book in books %}
                     <li class="sp-rank-item">
                         <div class="sp-rank-num" aria-label="Rank {{ loop.index }}">{{ loop.index }}</div>
-                        {% with cover_filename=book.cover_filename, title=book.title, thumb_class='book-cover-thumb--share', svg_size=18 %}
+                        {% with cover_data=book.cover_data, cover_filename=book.cover_filename, title=book.title, thumb_class='book-cover-thumb--share', svg_size=18 %}
                         {% include 'components/cover_image.html' %}
                         {% endwith %}
                         <div class="sp-rank-body">

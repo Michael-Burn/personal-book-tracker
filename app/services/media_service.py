@@ -229,6 +229,46 @@ class MediaService:
         storage = FileStorage(stream=io.BytesIO(raw), filename=filename_hint)
         return self.save_book_cover(storage)
 
+    def save_book_cover_as_data_uri(self, file_storage: FileStorage) -> str:
+        """Validate, resize, and encode a book cover as a WEBP data-URI.
+
+        Returns a data:image/webp;base64,... string for storage in Book.cover_data.
+        Covers stored this way survive redeploys because they live in the database.
+        """
+        img = self.validate_image(
+            file_storage,
+            max_bytes=self.settings.cover_max_bytes,
+            size_error='Cover image must be 5 MB or smaller.',
+        )
+        img = self.resize_cover(img)
+        return self._image_to_data_uri(img)
+
+    def save_book_cover_from_bytes_as_data_uri(
+        self, raw: bytes, *, filename_hint: str = 'cover.jpg'
+    ) -> str:
+        """Convert raw image bytes (e.g. provider download) to a WEBP data-URI."""
+        if not raw:
+            raise MediaValidationError('The cover image is empty.')
+        storage = FileStorage(stream=io.BytesIO(raw), filename=filename_hint)
+        return self.save_book_cover_as_data_uri(storage)
+
+    def _image_to_data_uri(self, img: Image.Image) -> str:
+        """Encode a Pillow image as a WEBP data-URI string."""
+        img = self.to_rgb_webp_ready(img)
+        out = io.BytesIO()
+        try:
+            img.save(out, format='WEBP', quality=self.WEBP_QUALITY, method=6)
+        except OSError as exc:
+            raise MediaValidationError(
+                'Could not process that image. Please try a different file.'
+            ) from exc
+        data = out.getvalue()
+        if not data:
+            raise MediaValidationError(
+                'Could not process that image. Please try a different file.'
+            )
+        return f'data:image/webp;base64,{base64.b64encode(data).decode("ascii")}'
+
     def process_avatar_to_data_uri(self, file_storage: FileStorage) -> str:
         """Validate, resize, and encode an avatar as a WEBP data-URI for User.avatar.
 

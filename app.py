@@ -143,6 +143,7 @@ class Book(db.Model):
     )
     is_wild        = db.Column(db.Boolean, nullable=False, default=False)
     cover_filename = db.Column(db.String(255), nullable=True)
+    cover_data     = db.Column(db.Text, nullable=True)
     started_reading_at  = db.Column(db.Date, nullable=True)
     finished_reading_at = db.Column(db.Date, nullable=True)
     user_id        = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
@@ -945,16 +946,17 @@ def edit(id):
         if remove_cover and not has_new_cover:
             media_service.delete_book_cover(book.cover_filename)
             book.cover_filename = None
+            book.cover_data = None
         elif has_new_cover:
             try:
-                new_filename = media_service.save_book_cover(cover_file)
+                new_cover_data = media_service.save_book_cover_as_data_uri(cover_file)
             except MediaValidationError as exc:
                 flash(exc.message, 'cover_error')
                 return _render_edit()
             old_filename = book.cover_filename
-            book.cover_filename = new_filename
-            # Delete old file only after the new one is saved successfully
-            if old_filename and old_filename != new_filename:
+            book.cover_data = new_cover_data
+            book.cover_filename = None
+            if old_filename:
                 media_service.delete_book_cover(old_filename)
 
         db.session.commit()
@@ -1003,11 +1005,11 @@ def add():
             flash(date_err, 'book_error')
             return _render_add()
 
-        cover_filename = None
+        cover_data = None
         cover_file = request.files.get('cover')
         if cover_file and cover_file.filename:
             try:
-                cover_filename = media_service.save_book_cover(cover_file)
+                cover_data = media_service.save_book_cover_as_data_uri(cover_file)
             except MediaValidationError as exc:
                 flash(exc.message, 'cover_error')
                 return _render_add()
@@ -1021,9 +1023,9 @@ def add():
                 )
                 if raw:
                     try:
-                        cover_filename = media_service.save_book_cover_from_bytes(raw)
+                        cover_data = media_service.save_book_cover_from_bytes_as_data_uri(raw)
                     except MediaValidationError:
-                        cover_filename = None
+                        cover_data = None
 
         new_book = Book(
             title=request.form['title'],
@@ -1031,7 +1033,7 @@ def add():
             rating=rating,
             reading_status=status,
             is_wild=request.form.get('is_wild') in ('on', '1', 'true', 'True'),
-            cover_filename=cover_filename,
+            cover_data=cover_data,
             started_reading_at=started,
             finished_reading_at=finished,
             user_id=current_user.id,
@@ -1479,12 +1481,118 @@ def admin_delete_user(user_id):
         safe_next_url(request.form.get('next'), url_for('admin_explorer'))
     )
 
+@app.route('/admin/backfill-covers', methods=['POST'])
+@admin_required
+def admin_backfill_covers():
+    """Search catalog APIs and save cover_data for every book that lacks one."""
+    import time as _time
+
+    books = Book.query.filter(Book.cover_data.is_(None)).all()
+
+    found = skipped = failed = 0
+    details: list[dict] = []
+
+    for book in books:
+        q = f"{book.title} {book.author or ''}".strip()
+        try:
+            hits = book_metadata_service.search_books(q, limit=5)
+            cover_url: str | None = None
+            for hit in hits:
+                url = hit.get('cover_url')
+                if url and book_metadata_service.is_allowed_cover_url(url):
+                    cover_url = url
+                    break
+
+            if not cover_url:
+                skipped += 1
+                details.append({'id': book.id, 'title': book.title, 'status': 'no_cover_found'})
+                continue
+
+            raw = book_metadata_service.fetch_cover_bytes(
+                cover_url, max_bytes=media_service.MAX_BYTES
+            )
+            if not raw:
+                failed += 1
+                details.append({'id': book.id, 'title': book.title, 'status': 'download_failed'})
+                continue
+
+            book.cover_data = media_service.save_book_cover_from_bytes_as_data_uri(raw)
+            found += 1
+            details.append({'id': book.id, 'title': book.title, 'status': 'ok'})
+
+        except Exception as exc:  # noqa: BLE001
+            failed += 1
+            details.append({'id': book.id, 'title': book.title, 'status': f'error: {exc}'})
+
+        _time.sleep(0.15)   # be polite to external APIs
+
+    db.session.commit()
+    return jsonify({
+        'total': len(books),
+        'found': found,
+        'skipped': skipped,
+        'failed': failed,
+        'details': details,
+    })
+
+
 def _repair_db():
-    """Add any columns missing from pre-migration production databases.
-    Uses PostgreSQL's ADD COLUMN IF NOT EXISTS — completely safe to re-run."""
+    """Add any columns missing from production or local-dev databases.
+
+    PostgreSQL uses ADD COLUMN IF NOT EXISTS (one shot).
+    SQLite uses inspect + per-column ADD COLUMN (no IF NOT EXISTS before 3.37,
+    and multi-column ALTER is unsupported anyway).  Both paths are idempotent.
+    """
     with app.app_context():
-        if not db.engine.url.drivername.startswith('postgresql'):
-            return  # SQLite local dev: migrations handle this
+        driver = db.engine.url.drivername
+        is_sqlite = driver == 'sqlite' or driver.startswith('sqlite')
+        is_pg = driver.startswith('postgresql')
+
+        if not (is_sqlite or is_pg):
+            return
+
+        # ── SQLite: inspect & patch per column ───────────────────────────────
+        if is_sqlite:
+            try:
+                insp = sa.inspect(db.engine)
+                existing_tables = set(insp.get_table_names())
+                if 'book' not in existing_tables or 'user' not in existing_tables:
+                    return  # Fresh DB — create_all() or migrations will build the schema
+                book_cols = {c['name'] for c in insp.get_columns('book')}
+                user_cols = {c['name'] for c in insp.get_columns('user')}
+                sqlite_book_adds = [
+                    ('cover_data', 'TEXT'),
+                    ('cover_filename', 'VARCHAR(255)'),
+                    ('is_wild', 'BOOLEAN NOT NULL DEFAULT 0'),
+                    ('reading_status', "VARCHAR(20) NOT NULL DEFAULT 'finished'"),
+                    ('started_reading_at', 'DATE'),
+                    ('finished_reading_at', 'DATE'),
+                    ('user_id', 'INTEGER'),
+                    ('date_added', 'TIMESTAMP'),
+                ]
+                sqlite_user_adds = [
+                    ('avatar', 'TEXT'),
+                    ('is_active', 'BOOLEAN NOT NULL DEFAULT 1'),
+                    ('security_question', 'VARCHAR(200)'),
+                    ('security_answer_hash', 'VARCHAR(256)'),
+                ]
+                with db.engine.begin() as conn:
+                    for col_name, col_def in sqlite_book_adds:
+                        if col_name not in book_cols:
+                            conn.execute(sa.text(
+                                f'ALTER TABLE book ADD COLUMN {col_name} {col_def}'
+                            ))
+                    for col_name, col_def in sqlite_user_adds:
+                        if col_name not in user_cols:
+                            conn.execute(sa.text(
+                                f'ALTER TABLE "user" ADD COLUMN {col_name} {col_def}'
+                            ))
+                print('[REPAIR] SQLite schema repair completed.', flush=True)
+            except Exception as exc:
+                print(f'[REPAIR] SQLite schema repair error: {exc}', flush=True)
+            return
+
+        # ── PostgreSQL: ADD COLUMN IF NOT EXISTS (batch, efficient) ──────────
         try:
             with db.engine.begin() as conn:
                 conn.execute(sa.text(
@@ -1493,6 +1601,7 @@ def _repair_db():
                     'ADD COLUMN IF NOT EXISTS date_added TIMESTAMP, '
                     'ADD COLUMN IF NOT EXISTS is_wild BOOLEAN NOT NULL DEFAULT FALSE, '
                     'ADD COLUMN IF NOT EXISTS cover_filename VARCHAR(255), '
+                    'ADD COLUMN IF NOT EXISTS cover_data TEXT, '
                     "ADD COLUMN IF NOT EXISTS reading_status VARCHAR(20) NOT NULL DEFAULT 'finished', "
                     'ADD COLUMN IF NOT EXISTS started_reading_at DATE, '
                     'ADD COLUMN IF NOT EXISTS finished_reading_at DATE'

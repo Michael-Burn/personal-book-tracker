@@ -291,6 +291,29 @@
             </div>
         </div>
     </div>
+
+    <!-- ── Admin Tools ───────────────────────────────────────── -->
+    <div class="hub-section" style="margin-top: var(--space-8);">
+        <h2 class="hub-section-title" style="margin-bottom: var(--space-4);">Admin Tools</h2>
+        <div class="hub-kpi-card" style="max-width: 560px;">
+            <div style="display:flex; align-items:center; gap: 10px; margin-bottom: 10px;">
+                <div class="hub-kpi-icon hub-kpi-icon--blue">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                </div>
+                <div>
+                    <div class="hub-kpi-val" style="font-size: 1rem;">Backfill Book Covers</div>
+                    <div class="hub-kpi-lbl" style="text-transform:none; letter-spacing:0; font-size: 0.8rem; font-weight:400;">Searches Google Books &amp; Open Library to find and save covers for all books that don't have one stored yet.</div>
+                </div>
+            </div>
+            <button type="button" id="backfillBtn" class="admin-btn admin-btn--secondary" style="align-self: flex-start;">
+                Run Backfill
+            </button>
+            <div id="backfillStatus" style="margin-top: 12px; display: none;">
+                <div id="backfillProgress" style="font-size: 0.82rem; color: var(--color-text-muted); margin-bottom: 8px;"></div>
+                <div id="backfillResults"></div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
@@ -362,6 +385,61 @@
         theme.registerChart(monthChart);
         theme.registerChart(usersChart);
     }
+})();
+</script>
+<script>
+(function () {
+    var btn = document.getElementById('backfillBtn');
+    var statusEl = document.getElementById('backfillStatus');
+    var progressEl = document.getElementById('backfillProgress');
+    var resultsEl = document.getElementById('backfillResults');
+
+    if (!btn) return;
+
+    btn.addEventListener('click', function () {
+        if (!confirm('This will search Google Books / Open Library for covers on all books without one. Continue?')) return;
+
+        btn.disabled = true;
+        btn.textContent = 'Running…';
+        statusEl.style.display = 'block';
+        progressEl.textContent = 'Searching — this may take a minute for large libraries…';
+        resultsEl.innerHTML = '';
+
+        fetch('{{ url_for("admin_backfill_covers") }}', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': '{{ csrf_token() }}', 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'csrf_token={{ csrf_token() }}'
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            progressEl.textContent = 'Done. ' + data.total + ' book(s) processed.';
+
+            var rows = (data.details || []).map(function (d) {
+                var icon = d.status === 'ok' ? '✅' : d.status === 'no_cover_found' ? '⚠️' : '❌';
+                var label = d.status === 'ok' ? 'Cover saved' : d.status === 'no_cover_found' ? 'No cover found' : d.status;
+                return '<div style="display:flex;gap:6px;font-size:0.78rem;padding:3px 0;border-bottom:1px solid var(--color-border);">'
+                    + '<span style="flex-shrink:0;">' + icon + '</span>'
+                    + '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + d.title + '">' + d.title + '</span>'
+                    + '<span style="color:var(--color-text-muted);flex-shrink:0;">' + label + '</span>'
+                    + '</div>';
+            });
+
+            var summary = '<div style="display:flex;gap:16px;font-size:0.82rem;font-weight:600;margin-bottom:8px;">'
+                + '<span style="color:var(--color-success);">✅ ' + data.found + ' found</span>'
+                + '<span style="color:var(--color-warning);">⚠️ ' + data.skipped + ' no cover</span>'
+                + '<span style="color:var(--color-danger);">❌ ' + data.failed + ' failed</span>'
+                + '</div>';
+
+            resultsEl.innerHTML = summary + (rows.length ? '<div style="max-height:260px;overflow-y:auto;">' + rows.join('') + '</div>' : '');
+            btn.disabled = false;
+            btn.textContent = 'Run Again';
+        })
+        .catch(function (err) {
+            progressEl.textContent = 'Request failed: ' + err;
+            btn.disabled = false;
+            btn.textContent = 'Retry';
+        });
+    });
 })();
 </script>
 {% endblock %}

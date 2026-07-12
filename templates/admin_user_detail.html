@@ -207,7 +207,7 @@
         {% for group in quote_groups %}
         <div class="qt-book-group">
             <div class="qt-book-header">
-                {% with cover_filename=group.book.cover_filename, title=group.book.title, thumb_class='book-cover-thumb--quote', svg_size=18 %}
+                {% with cover_data=group.book.cover_data, cover_filename=group.book.cover_filename, title=group.book.title, thumb_class='book-cover-thumb--quote', svg_size=18 %}
                 {% include 'components/cover_image.html' %}
                 {% endwith %}
                 <div class="qt-book-info">

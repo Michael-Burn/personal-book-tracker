@@ -5,6 +5,7 @@ through ShareEngine so format sizes, palette, fonts, and export stay consistent.
 """
 from __future__ import annotations
 
+import base64
 import io
 import math
 import os
@@ -229,7 +230,21 @@ class ShareEngine:
         mw = self._text_width(draw, mark, fn_s)
         draw.text((w - pad - mw, y + 4), mark, fill=self.TEXT2, font=fn_s)
 
-    def _load_cover(self, filename: str | None, size: tuple[int, int]) -> Image.Image | None:
+    def _load_cover(
+        self,
+        filename: str | None,
+        size: tuple[int, int],
+        *,
+        cover_data: str | None = None,
+    ) -> Image.Image | None:
+        if cover_data and cover_data.startswith('data:image/'):
+            try:
+                _, b64 = cover_data.split(',', 1)
+                raw = base64.b64decode(b64)
+                cover = Image.open(io.BytesIO(raw)).convert('RGB')
+                return self._cover_fit(cover, size)
+            except Exception:
+                pass
         if not filename or self.cover_resolver is None:
             return None
         path = self.cover_resolver(filename)
@@ -275,10 +290,11 @@ class ShareEngine:
         *,
         title: str = '',
         radius: int = 18,
+        cover_data: str | None = None,
     ) -> None:
         x0, y0, x1, y1 = box
         size = (x1 - x0, y1 - y0)
-        cover = self._load_cover(filename, size) or self._placeholder_cover(size, title)
+        cover = self._load_cover(filename, size, cover_data=cover_data) or self._placeholder_cover(size, title)
         if radius > 0:
             mask = Image.new('L', size, 0)
             mask_draw = ImageDraw.Draw(mask)
@@ -385,11 +401,17 @@ class ShareEngine:
             cover_h = self._scale(format_name, 160)
             cover_w = int(cover_h * 0.68)
             gap = 14
-            for i, filename in enumerate(covers[:6]):
+            for i, cover_entry in enumerate(covers[:6]):
                 x = pad + i * (cover_w + gap)
                 if x + cover_w > w - pad:
                     break
-                self._paste_cover(img, filename, (x, strip_y, x + cover_w, strip_y + cover_h), radius=12)
+                if isinstance(cover_entry, dict):
+                    filename = cover_entry.get('cover_filename')
+                    cdata = cover_entry.get('cover_data')
+                else:
+                    filename = cover_entry
+                    cdata = None
+                self._paste_cover(img, filename, (x, strip_y, x + cover_w, strip_y + cover_h), radius=12, cover_data=cdata)
         else:
             draw.text(
                 (pad, h - pad - self._scale(format_name, 100)),
@@ -436,6 +458,7 @@ class ShareEngine:
             book.get('cover_filename'),
             (cx, cy, cx + cover_w, cy + cover_h),
             title=book.get('title') or '',
+            cover_data=book.get('cover_data'),
             radius=20,
         )
 
@@ -523,9 +546,15 @@ class ShareEngine:
             strip_y = h - pad - self._scale(format_name, 200)
             cover_h = self._scale(format_name, 140)
             cover_w = int(cover_h * 0.68)
-            for i, filename in enumerate(covers[:4]):
+            for i, cover_entry in enumerate(covers[:4]):
                 x = pad + i * (cover_w + 14)
-                self._paste_cover(img, filename, (x, strip_y, x + cover_w, strip_y + cover_h), radius=12)
+                if isinstance(cover_entry, dict):
+                    filename = cover_entry.get('cover_filename')
+                    cdata = cover_entry.get('cover_data')
+                else:
+                    filename = cover_entry
+                    cdata = None
+                self._paste_cover(img, filename, (x, strip_y, x + cover_w, strip_y + cover_h), radius=12, cover_data=cdata)
 
         self._draw_footer(img, draw, format_name, year=year)
         return img

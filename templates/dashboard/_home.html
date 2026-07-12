@@ -20,6 +20,7 @@
     </div>
     {% if home_hero.book %}
     <div class="home-hero-cover" aria-hidden="true">
+        {% set cover_data = home_hero.book.cover_data %}
         {% set cover_filename = home_hero.book.cover_filename %}
         {% set title = home_hero.book.title %}
         {% set thumb_class = 'book-cover-thumb--hero' %}
@@ -42,6 +43,7 @@
     <ul class="home-continue-list">
         {% for item in currently_reading %}
         <li class="home-continue-card">
+            {% set cover_data = item.book.cover_data %}
             {% set cover_filename = item.book.cover_filename %}
             {% set title = item.book.title %}
             {% set thumb_class = 'book-cover-thumb--continue' %}
@@ -162,6 +164,7 @@
         {% for item in recently_finished %}
         <li class="home-finished-card">
             <a href="{{ url_for('edit', id=item.book.id) }}" class="home-finished-link">
+                {% set cover_data = item.book.cover_data %}
                 {% set cover_filename = item.book.cover_filename %}
                 {% set title = item.book.title %}
                 {% set thumb_class = 'book-cover-thumb--finished' %}

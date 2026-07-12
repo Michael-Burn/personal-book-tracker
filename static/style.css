@@ -64,10 +64,14 @@ body.db-body {
 .container {
     max-width: 1200px;
     margin: 0 auto;
-    background: linear-gradient(180deg, var(--color-surface), rgba(250,250,255,0.98));
+    background: var(--color-surface);
     padding: 20px;
     border-radius: 18px;
     box-shadow: var(--shadow-strong);
+    color: var(--color-text);
+}
+[data-theme="light"] .container {
+    background: linear-gradient(180deg, var(--color-surface), rgba(250,250,255,0.98));
 }
 
 h1 {
@@ -1857,6 +1861,25 @@ body.sp-body {
 .db-nav-btn--icon { padding: 7px 9px; min-width: 0; gap: 0; }
 .db-nav-btn--icon svg { width: 16px; height: 16px; }
 
+/* ─── Navbar theme toggle ──────────────────────────────── */
+.db-nav-btn--theme {
+    position: relative;
+    gap: 5px;
+}
+.db-nav-btn--theme .theme-icon { display: none; }
+/* Show only the icon that matches the current pref */
+[data-theme-pref="light"]  .db-nav-btn--theme .theme-icon--light  { display: inline-block; }
+[data-theme-pref="dark"]   .db-nav-btn--theme .theme-icon--dark   { display: inline-block; }
+[data-theme-pref="system"] .db-nav-btn--theme .theme-icon--system { display: inline-block; }
+/* Default fallback before JS sets data-theme-pref */
+:not([data-theme-pref]) .db-nav-btn--theme .theme-icon--system { display: inline-block; }
+.db-nav-btn--theme .theme-label {
+    font-size: var(--font-xs);
+}
+@media (max-width: 640px) {
+    .db-nav-btn--theme .theme-label { display: none; }
+}
+
 /* ─── Admin panel ────────────────────────────────────────── */
 .admin-card {
     width: 100%;
@@ -2148,7 +2171,7 @@ a.admin-btn--danger    { background: var(--color-danger-light); color: var(--col
 
 .hub-kpi-card {
     min-width: 0;
-    background: var(--surface-card);
+    background: var(--color-card);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-card);
     box-shadow: var(--shadow-card);
@@ -2181,7 +2204,7 @@ a.admin-btn--danger    { background: var(--color-danger-light); color: var(--col
 .hub-kpi-val {
     font-size: var(--text-xl);
     font-weight: var(--weight-bold);
-    color: var(--color-text-primary);
+    color: var(--color-text);
     line-height: var(--leading-tight);
     letter-spacing: -0.3px;
 }
@@ -2191,7 +2214,7 @@ a.admin-btn--danger    { background: var(--color-danger-light); color: var(--col
     font-weight: var(--weight-semibold);
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: var(--color-text-secondary);
+    color: var(--color-text-muted);
     white-space: normal;
     line-height: 1.35;
 }
@@ -3249,7 +3272,7 @@ a.admin-btn--danger    { background: var(--color-danger-light); color: var(--col
     margin: 0 0 18px;
 }
 .timeline-panel {
-    background: rgba(248,249,252,0.95);
+    background: var(--color-surface-muted);
     border: 1px solid var(--color-border);
     border-radius: 12px;
     padding: 14px 14px 12px;
@@ -3384,7 +3407,7 @@ a.admin-btn--danger    { background: var(--color-danger-light); color: var(--col
     margin: 4px 0 var(--space-5);
 }
 .rs-kpi-card {
-    background: var(--surface-card);
+    background: var(--color-card);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-card);
     padding: var(--space-4) var(--space-3) var(--space-3);
@@ -3421,7 +3444,7 @@ a.admin-btn--danger    { background: var(--color-danger-light); color: var(--col
     font-weight: var(--weight-bold);
     letter-spacing: -0.4px;
     line-height: var(--leading-tight);
-    color: var(--color-text-primary);
+    color: var(--color-text);
     min-width: 0;
 }
 .rs-kpi-val--text {
@@ -3437,7 +3460,7 @@ a.admin-btn--danger    { background: var(--color-danger-light); color: var(--col
     font-weight: var(--weight-semibold);
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: var(--color-text-secondary);
+    color: var(--color-text-muted);
     white-space: normal;
     line-height: 1.35;
     overflow: visible;
@@ -3488,7 +3511,7 @@ a.admin-btn--danger    { background: var(--color-danger-light); color: var(--col
     gap: 12px;
 }
 .rs-summary-card {
-    background: rgba(248,249,252,0.95);
+    background: var(--color-surface-muted);
     border: 1px solid var(--color-border);
     border-radius: 12px;
     padding: 14px 14px 12px;
@@ -3499,34 +3522,34 @@ a.admin-btn--danger    { background: var(--color-danger-light); color: var(--col
     transition: border-color 0.15s ease, background 0.15s ease;
 }
 .rs-summary-card:hover {
-    border-color: rgba(203,213,225,0.95);
-    background: var(--surface-glass-strong);
+    border-color: var(--color-border-strong);
+    background: var(--color-surface-alt);
 }
 .rs-summary-lbl {
     font-size: 0.62rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.35px;
-    color: var(--color-text-secondary);
+    color: var(--color-text-muted);
 }
 .rs-summary-val {
     font-size: 1.15rem;
     font-weight: 800;
     letter-spacing: -0.3px;
-    color: var(--color-text-primary);
+    color: var(--color-text);
     line-height: 1.2;
 }
 .rs-summary-sub {
     font-size: 0.75rem;
     font-weight: 600;
-    color: var(--color-text-secondary);
+    color: var(--color-text-muted);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 .rs-summary-hint {
     font-size: 0.68rem;
-    color: var(--color-text-secondary);
+    color: var(--color-text-muted);
     opacity: 0.85;
 }
 
@@ -4127,7 +4150,7 @@ a.admin-btn--danger    { background: var(--color-danger-light); color: var(--col
     align-items: center;
     gap: 2px;
     padding: 3px;
-    background: rgba(248, 249, 252, 0.95);
+    background: var(--color-surface-muted);
     border: 1px solid var(--color-border);
     border-radius: 10px;
     flex-shrink: 0;
@@ -4138,7 +4161,7 @@ a.admin-btn--danger    { background: var(--color-danger-light); color: var(--col
     gap: 6px;
     border: none;
     background: transparent;
-    color: var(--color-text-secondary);
+    color: var(--color-text-muted);
     font-size: 0.72rem;
     font-weight: 700;
     letter-spacing: 0.02em;
@@ -4148,12 +4171,12 @@ a.admin-btn--danger    { background: var(--color-danger-light); color: var(--col
     transition: background 0.18s ease, color 0.18s ease;
 }
 .lib-view-btn:hover {
-    color: var(--color-text-primary);
-    background: var(--surface-glass);
+    color: var(--color-text);
+    background: var(--color-hover);
 }
 .lib-view-btn.is-active {
     background: var(--color-surface);
-    color: var(--color-primary-dark);
+    color: var(--color-primary);
     box-shadow: 0 1px 3px var(--divider);
 }
 

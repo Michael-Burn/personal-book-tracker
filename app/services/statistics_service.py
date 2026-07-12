@@ -785,6 +785,7 @@ class StatisticsService:
             'rating': book.rating if has_rating(book) else None,
             'is_wild': bool(book.is_wild),
             'cover_filename': book.cover_filename,
+            'cover_data': getattr(book, 'cover_data', None),
             'started_reading_at': getattr(book, 'started_reading_at', None),
             'finished_reading_at': getattr(book, 'finished_reading_at', None),
         }
@@ -825,10 +826,17 @@ class StatisticsService:
         authors = {b.author for b in year_books}
 
         # Cover collage — prefer books with covers, highest rated first
-        covers = []
+        # Each entry is a dict with cover_filename and cover_data so the
+        # share engine can load from DB (cover_data) or disk (cover_filename).
+        covers: list[dict[str, Any]] = []
+        seen_covers: set[str] = set()
         for b in year_books_sorted:
-            if b.cover_filename and b.cover_filename not in covers:
-                covers.append(b.cover_filename)
+            cover_data = getattr(b, 'cover_data', None)
+            cover_filename = b.cover_filename
+            key = cover_data or cover_filename
+            if key and key not in seen_covers:
+                seen_covers.add(key)
+                covers.append({'cover_filename': cover_filename, 'cover_data': cover_data})
             if len(covers) >= 8:
                 break
 
@@ -858,8 +866,12 @@ class StatisticsService:
             if has_rating(b):
                 entry['rating_sum'] += b.rating
                 entry['rating_count'] += 1
-            if b.cover_filename and len(entry['covers']) < 4:
-                entry['covers'].append(b.cover_filename)
+            cover_data = getattr(b, 'cover_data', None)
+            if (cover_data or b.cover_filename) and len(entry['covers']) < 4:
+                entry['covers'].append({
+                    'cover_filename': b.cover_filename,
+                    'cover_data': cover_data,
+                })
 
         favourite_author = None
         if author_map:
@@ -971,6 +983,7 @@ class StatisticsService:
                 'book_title': book.title if book else None,
                 'book_author': book.author if book else None,
                 'cover_filename': book.cover_filename if book else None,
+                'cover_data': getattr(book, 'cover_data', None) if book else None,
                 'rating': (
                     book.rating if book is not None and has_rating(book) else None
                 ),

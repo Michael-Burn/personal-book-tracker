@@ -1,20 +1,22 @@
 {# Cover thumb + placeholder.
    Params:
-     cover_filename — stored filename or None
+     cover_data     — data-URI string or None (database-stored, survives redeploys)
+     cover_filename — stored filename or None (legacy filesystem-based)
      title          — optional title attribute / alt text
      thumb_class    — extra classes on .book-cover-thumb (e.g. book-cover-thumb--share)
      svg_size       — placeholder SVG edge length (default 22)
      alt            — img alt (default empty for decorative; set for table covers)
 #}
+{% set _cover_src = cover_data if (cover_data is defined and cover_data) else (url_for('serve_book_cover', filename=cover_filename) if (cover_filename is defined and cover_filename) else None) %}
 <div class="book-cover-thumb{% if thumb_class %} {{ thumb_class }}{% endif %}"{% if title %} title="{{ title }}"{% endif %}>
-    {% if cover_filename %}
-    <img src="{{ url_for('serve_book_cover', filename=cover_filename) }}"
+    {% if _cover_src %}
+    <img src="{{ _cover_src }}"
          alt="{{ alt if alt is defined else '' }}"
          loading="lazy"
          decoding="async"
          onerror="this.style.display='none'; var p=this.nextElementSibling; if(p) p.hidden=false;">
     {% endif %}
-    <div class="book-cover-placeholder" aria-hidden="true" {% if cover_filename %}hidden{% endif %}>
+    <div class="book-cover-placeholder" aria-hidden="true" {% if _cover_src %}hidden{% endif %}>
         <svg width="{{ svg_size|default(22) }}" height="{{ svg_size|default(22) }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
     </div>
 </div>

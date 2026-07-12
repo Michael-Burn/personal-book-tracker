@@ -11,7 +11,7 @@
 {% set is_readonly = readonly is defined and readonly %}
 <article class="lib-card{% if is_readonly %} lib-card--readonly{% endif %}" data-status="{{ status }}" data-title="{{ book.title|lower }}" data-author="{{ card_author|lower }}" data-search="{{ book.title|lower }} {{ card_author|lower }}">
     <div class="lib-card-media">
-        {% with cover_filename=book.cover_filename, title=book.title, alt='Cover of ' ~ book.title, thumb_class='book-cover-thumb--card', svg_size=36 %}
+        {% with cover_data=book.cover_data, cover_filename=book.cover_filename, title=book.title, alt='Cover of ' ~ book.title, thumb_class='book-cover-thumb--card', svg_size=36 %}
         {% include 'components/cover_image.html' %}
         {% endwith %}
         {% if not is_readonly %}

@@ -165,7 +165,7 @@
                 {% for book in yd.library.books[:8] %}
                 {% if not yd.book_of_year or book.id != yd.book_of_year.id %}
                 <li class="ry-shelf-card">
-                    {% with cover_filename=book.cover_filename, title=book.title, thumb_class='book-cover-thumb--finished', svg_size=20, alt=book.title %}
+                    {% with cover_data=book.cover_data, cover_filename=book.cover_filename, title=book.title, thumb_class='book-cover-thumb--finished', svg_size=20, alt=book.title %}
                     {% include 'components/cover_image.html' %}
                     {% endwith %}
                     <div class="ry-shelf-body">

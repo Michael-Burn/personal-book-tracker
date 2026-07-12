@@ -77,28 +77,29 @@
             <div class="form-group cover-upload">
                 <label>Cover</label>
                 <div class="cover-upload-row">
-                    <div class="cover-preview" id="coverPreview">
-                        {% if book.cover_filename %}
-                        <img id="coverPreviewImg" class="cover-preview-img" alt="Current cover"
-                             src="{{ url_for('serve_book_cover', filename=book.cover_filename) }}"
-                             onerror="this.style.display='none'; var p=this.nextElementSibling; if(p){ p.hidden=false; p.removeAttribute('hidden'); }">
-                        <div class="book-cover-placeholder book-cover-placeholder--preview" id="coverPlaceholder" hidden aria-hidden="true">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-                        </div>
-                        {% else %}
-                        <div class="book-cover-placeholder book-cover-placeholder--preview" id="coverPlaceholder">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-                        </div>
-                        <img id="coverPreviewImg" class="cover-preview-img" alt="" hidden>
-                        {% endif %}
+            <div class="cover-preview" id="coverPreview">
+                    {% set _has_cover = book.cover_data or book.cover_filename %}
+                    {% if _has_cover %}
+                    <img id="coverPreviewImg" class="cover-preview-img" alt="Current cover"
+                         src="{{ book.cover_data if book.cover_data else url_for('serve_book_cover', filename=book.cover_filename) }}"
+                         onerror="this.style.display='none'; var p=this.nextElementSibling; if(p){ p.hidden=false; p.removeAttribute('hidden'); }">
+                    <div class="book-cover-placeholder book-cover-placeholder--preview" id="coverPlaceholder" hidden aria-hidden="true">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
                     </div>
+                    {% else %}
+                    <div class="book-cover-placeholder book-cover-placeholder--preview" id="coverPlaceholder">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                    </div>
+                    <img id="coverPreviewImg" class="cover-preview-img" alt="" hidden>
+                    {% endif %}
+                </div>
                     <div class="cover-upload-controls">
                         <label class="cover-file-label" for="coverInput">
                             {% if book.cover_filename %}Replace Cover{% else %}Upload Cover{% endif %}
                         </label>
                         <input type="file" name="cover" id="coverInput" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
                         <p class="cover-upload-note">JPG, PNG, or WEBP · max 5 MB</p>
-                        {% if book.cover_filename %}
+                        {% if book.cover_data or book.cover_filename %}
                         <label class="wild-check cover-remove-check">
                             <input type="checkbox" name="remove_cover" value="1" id="removeCover">
                             <span>Remove Cover</span>
