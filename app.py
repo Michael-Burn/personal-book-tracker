@@ -21,7 +21,7 @@ from flask_sqlalchemy import SQLAlchemy
 import sqlalchemy as sa
 from sqlalchemy.orm import selectinload
 from flask_migrate import Migrate
-from flask_wtf.csrf import CSRFProtect
+from flask_wtf.csrf import CSRFProtect, CSRFError
 from flask_talisman import Talisman
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_limiter import Limiter
@@ -901,6 +901,23 @@ def request_entity_too_large(_error):
         flash('Image must be under 2 MB.', 'avatar_error')
     else:
         flash('Cover image must be 5 MB or smaller.', 'cover_error')
+    return redirect(request.referrer or url_for('authors_page'))
+
+
+@app.errorhandler(CSRFError)
+def handle_csrf_error(error):
+    """Friendly redirect when CSRF fails — including empty multipart from truncated uploads."""
+    is_multipart = (request.content_type or '').startswith('multipart/form-data')
+    content_length = request.content_length or 0
+    # Werkzeug may silently yield an empty form when multipart is truncated/malformed.
+    empty_multipart = is_multipart and content_length > 0 and not request.form
+    if empty_multipart:
+        if request.endpoint == 'upload_avatar':
+            flash('Upload failed — try a smaller image (under 2 MB).', 'avatar_error')
+        else:
+            flash('Upload failed — try a smaller image (under 5 MB).', 'cover_error')
+    else:
+        flash('Your session expired or the form was invalid. Please try again.', 'cover_error')
     return redirect(request.referrer or url_for('authors_page'))
 
 

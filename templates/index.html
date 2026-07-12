@@ -95,6 +95,7 @@
 
 {% block scripts %}
     <script src="{{ url_for('static', filename='js/book_metadata_search.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/cover_upload.js') }}"></script>
 
     {% if active_view == 'analytics' and not is_empty %}
     <script>
