@@ -394,28 +394,28 @@
     var statusEl = document.getElementById('backfillStatus');
     var progressEl = document.getElementById('backfillProgress');
     var resultsEl = document.getElementById('backfillResults');
+    var allDetails = [];
 
     if (!btn) return;
 
-    btn.addEventListener('click', function () {
-        if (!confirm('This will search Google Books / Open Library for covers on all books without one. Continue?')) return;
-
+    function runBatch() {
         btn.disabled = true;
         btn.textContent = 'Running…';
         statusEl.style.display = 'block';
-        progressEl.textContent = 'Searching — this may take a minute for large libraries…';
-        resultsEl.innerHTML = '';
+        progressEl.textContent = 'Searching — processing up to 15 books…';
 
-        fetch('{{ url_for("admin_backfill_covers") }}', {
-            method: 'POST',
-            headers: { 'X-CSRFToken': '{{ csrf_token() }}', 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: 'csrf_token={{ csrf_token() }}'
+        var fd = new FormData();
+        fd.append('csrf_token', '{{ csrf_token() }}');
+
+        fetch('{{ url_for("admin_backfill_covers") }}', { method: 'POST', body: fd })
+        .then(function (r) {
+            if (!r.ok) { return r.text().then(function(t){ throw new Error('Server error ' + r.status + ': ' + t.substring(0, 120)); }); }
+            return r.json();
         })
-        .then(function (r) { return r.json(); })
         .then(function (data) {
-            progressEl.textContent = 'Done. ' + data.total + ' book(s) processed.';
+            allDetails = allDetails.concat(data.details || []);
 
-            var rows = (data.details || []).map(function (d) {
+            var rows = allDetails.map(function (d) {
                 var icon = d.status === 'ok' ? '✅' : d.status === 'no_cover_found' ? '⚠️' : '❌';
                 var label = d.status === 'ok' ? 'Cover saved' : d.status === 'no_cover_found' ? 'No cover found' : d.status;
                 return '<div style="display:flex;gap:6px;font-size:0.78rem;padding:3px 0;border-bottom:1px solid var(--color-border);">'
@@ -425,21 +425,43 @@
                     + '</div>';
             });
 
+            var totalFound   = allDetails.filter(function(d){ return d.status === 'ok'; }).length;
+            var totalSkipped = allDetails.filter(function(d){ return d.status === 'no_cover_found'; }).length;
+            var totalFailed  = allDetails.filter(function(d){ return d.status !== 'ok' && d.status !== 'no_cover_found'; }).length;
+
             var summary = '<div style="display:flex;gap:16px;font-size:0.82rem;font-weight:600;margin-bottom:8px;">'
-                + '<span style="color:var(--color-success);">✅ ' + data.found + ' found</span>'
-                + '<span style="color:var(--color-warning);">⚠️ ' + data.skipped + ' no cover</span>'
-                + '<span style="color:var(--color-danger);">❌ ' + data.failed + ' failed</span>'
+                + '<span style="color:var(--color-success);">✅ ' + totalFound + ' found</span>'
+                + '<span style="color:var(--color-warning);">⚠️ ' + totalSkipped + ' no cover</span>'
+                + '<span style="color:var(--color-danger);">❌ ' + totalFailed + ' failed</span>'
                 + '</div>';
 
             resultsEl.innerHTML = summary + (rows.length ? '<div style="max-height:260px;overflow-y:auto;">' + rows.join('') + '</div>' : '');
-            btn.disabled = false;
-            btn.textContent = 'Run Again';
+
+            if (data.remaining > 0) {
+                progressEl.textContent = 'Batch done. ' + data.remaining + ' book(s) still need covers — click Continue.';
+                btn.disabled = false;
+                btn.textContent = 'Continue (' + data.remaining + ' left)';
+            } else {
+                progressEl.textContent = 'All done — no more books without covers.';
+                btn.disabled = false;
+                btn.textContent = 'Run Again';
+                allDetails = [];
+            }
         })
         .catch(function (err) {
-            progressEl.textContent = 'Request failed: ' + err;
+            progressEl.textContent = 'Error: ' + err;
             btn.disabled = false;
             btn.textContent = 'Retry';
         });
+    }
+
+    btn.addEventListener('click', function () {
+        if (btn.textContent !== 'Continue (' + (btn.textContent.match(/\d+/) || [''])[0] + ' left)') {
+            if (!confirm('This will search Google Books / Open Library for covers on all books without one. Continue?')) return;
+            allDetails = [];
+            resultsEl.innerHTML = '';
+        }
+        runBatch();
     });
 })();
 </script>

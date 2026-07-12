@@ -1484,19 +1484,26 @@ def admin_delete_user(user_id):
 @app.route('/admin/backfill-covers', methods=['POST'])
 @admin_required
 def admin_backfill_covers():
-    """Search catalog APIs and save cover_data for every book that lacks one."""
+    """Search catalog APIs and save cover_data for books that lack one.
+
+    Processes up to ``limit`` books per call (default 15) so the request
+    completes well within Render's timeout. The caller checks ``remaining``
+    to decide whether to continue with another batch.
+    """
     import time as _time
 
-    books = Book.query.filter(Book.cover_data.is_(None)).all()
+    batch_limit = 15
+    all_missing = Book.query.filter(Book.cover_data.is_(None)).all()
+    batch = all_missing[:batch_limit]
 
     found = skipped = failed = 0
-    details: list[dict] = []
+    details = []
 
-    for book in books:
+    for book in batch:
         q = f"{book.title} {book.author or ''}".strip()
         try:
             hits = book_metadata_service.search_books(q, limit=5)
-            cover_url: str | None = None
+            cover_url = None
             for hit in hits:
                 url = hit.get('cover_url')
                 if url and book_metadata_service.is_allowed_cover_url(url):
@@ -1527,11 +1534,13 @@ def admin_backfill_covers():
         _time.sleep(0.15)   # be polite to external APIs
 
     db.session.commit()
+    remaining = max(0, len(all_missing) - batch_limit)
     return jsonify({
-        'total': len(books),
+        'total': len(batch),
         'found': found,
         'skipped': skipped,
         'failed': failed,
+        'remaining': remaining,
         'details': details,
     })
 
