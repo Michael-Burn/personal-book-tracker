@@ -138,13 +138,64 @@
     <!-- Books -->
     <div class="hub-section-title">Books <span class="hub-section-count">{{ books|length }}</span></div>
     {% if books %}
-    <div class="lib-grid hub-lib-grid">
-        {% for book in books %}
-        {% with readonly=true %}
-        {% include 'components/book_card.html' %}
-        {% endwith %}
-        {% endfor %}
+    <div class="hub-user-books-tools">
+        <label class="hub-toolbar-field hub-toolbar-field--grow">
+            <span>Search</span>
+            <input type="search" id="userBookSearch" class="hub-input" placeholder="Title or author…" autocomplete="off" aria-label="Search this user's books">
+        </label>
+        <label class="hub-toolbar-field hub-toolbar-field--status">
+            <span>Status</span>
+            <select id="userBookStatus" class="hub-select" aria-label="Filter by status">
+                <option value="">All</option>
+                {% for value, label in reading_statuses %}
+                <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label class="hub-toolbar-field hub-toolbar-field--wild">
+            <span>Wild</span>
+            <select id="userBookWild" class="hub-select" aria-label="Filter by wild">
+                <option value="">Any</option>
+                <option value="1">Wild</option>
+                <option value="0">Not wild</option>
+            </select>
+        </label>
     </div>
+    <div class="hub-table-wrap">
+        <table class="hub-data-table" id="userBooksTable" aria-label="User library">
+            <thead>
+                <tr>
+                    <th scope="col">Book</th>
+                    <th scope="col">Author</th>
+                    <th scope="col">Rating</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Wild</th>
+                    <th scope="col">Reading dates</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for book in books %}
+                {% set st = book.reading_status or 'finished' %}
+                <tr data-search="{{ book.title|lower }} {{ book.author|lower }}"
+                    data-status="{{ st }}"
+                    data-wild="{{ '1' if book.is_wild else '0' }}">
+                    <td data-label="Book" class="hub-td-primary">{{ book.title }}</td>
+                    <td data-label="Author">{{ book.author }}</td>
+                    <td data-label="Rating">{% if book.rating %}{{ book.rating }}{% else %}—{% endif %}</td>
+                    <td data-label="Status">{{ ReadingStatus.chip_label(st) }}</td>
+                    <td data-label="Wild">{% if book.is_wild %}Yes{% else %}—{% endif %}</td>
+                    <td data-label="Reading dates" class="hub-td-dates">
+                        {% if book.started_reading_at %}Started {{ book.started_reading_at.strftime('%Y-%m-%d') }}{% endif %}
+                        {% if book.started_reading_at and book.finished_reading_at %} · {% endif %}
+                        {% if book.finished_reading_at %}Finished {{ book.finished_reading_at.strftime('%Y-%m-%d') }}{% endif %}
+                        {% if not book.started_reading_at and not book.finished_reading_at %}—{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <p id="userBooksEmpty" class="hub-empty" hidden>No books match these filters.</p>
     {% else %}
     <p class="hub-empty">This user has no books yet.</p>
     {% endif %}
@@ -190,6 +241,36 @@
 {% endblock %}
 
 {% block scripts %}
+{% if books %}
+<script>
+(function () {
+    var search = document.getElementById('userBookSearch');
+    var status = document.getElementById('userBookStatus');
+    var wild = document.getElementById('userBookWild');
+    var rows = document.querySelectorAll('#userBooksTable tbody tr');
+    var empty = document.getElementById('userBooksEmpty');
+    function apply() {
+        var q = (search && search.value || '').trim().toLowerCase();
+        var st = status ? status.value : '';
+        var w = wild ? wild.value : '';
+        var visible = 0;
+        rows.forEach(function (row) {
+            var hay = row.getAttribute('data-search') || '';
+            var matchQ = !q || hay.indexOf(q) !== -1;
+            var matchS = !st || row.getAttribute('data-status') === st;
+            var matchW = !w || row.getAttribute('data-wild') === w;
+            var show = matchQ && matchS && matchW;
+            row.hidden = !show;
+            if (show) visible++;
+        });
+        if (empty) empty.hidden = visible > 0;
+    }
+    if (search) search.addEventListener('input', apply);
+    if (status) status.addEventListener('change', apply);
+    if (wild) wild.addEventListener('change', apply);
+})();
+</script>
+{% endif %}
 {% if not is_empty %}
 <script>
 const PRIMARY   = '#6C63FF';

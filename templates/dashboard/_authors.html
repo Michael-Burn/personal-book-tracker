@@ -2,8 +2,29 @@
 
 <div class="page-intro">
     <h2 class="page-intro-title">Authors</h2>
-    <p class="page-intro-sub">{% if authors|length == 0 %}Browse and sort the writers in your library once you add books.{% else %}{{ authors|length }} author{{ 's' if authors|length != 1 else '' }} in your library{% endif %}</p>
+    <p class="page-intro-sub">{% if authors|length == 0 %}Your primary browsing view — authors appear once you add books.{% else %}{{ authors|length }} author{{ 's' if authors|length != 1 else '' }} · open any writer to see their books{% endif %}</p>
 </div>
+
+{% if authors|length > 0 %}
+<div class="authors-stats" aria-label="Author statistics">
+    <div class="authors-stat">
+        <span class="authors-stat-val">{{ authors|length }}</span>
+        <span class="authors-stat-lbl">Authors</span>
+    </div>
+    <div class="authors-stat">
+        <span class="authors-stat-val">{{ total_books }}</span>
+        <span class="authors-stat-lbl">Books</span>
+    </div>
+    <div class="authors-stat">
+        <span class="authors-stat-val">{% if overall_avg %}{{ '%.1f'|format(overall_avg) }}{% else %}—{% endif %}</span>
+        <span class="authors-stat-lbl">Avg rating</span>
+    </div>
+    <div class="authors-stat authors-stat--wide">
+        <span class="authors-stat-val authors-stat-val--text">{% if most_active %}{{ most_active }}{% else %}—{% endif %}</span>
+        <span class="authors-stat-lbl">Most books</span>
+    </div>
+</div>
+{% endif %}
 
 <!-- ── Toolbar ────────────────────────────────── -->
 <div class="db-toolbar">

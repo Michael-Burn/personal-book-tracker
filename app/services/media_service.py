@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import io
 import uuid
+import base64
 from pathlib import Path
 
 from PIL import Image, UnidentifiedImageError
@@ -110,6 +111,10 @@ class MediaService:
         if 'GIF' in allowed_formats and ext == 'gif':
             ext_ok = True
         if not ext_ok:
+            if allowed_formats == self.settings.avatar_pil_formats:
+                raise MediaValidationError(
+                    'Unsupported image format. Please upload a JPG, PNG, GIF, or WEBP file.'
+                )
             raise MediaValidationError(
                 'Unsupported image format. Please upload a JPG, PNG, or WEBP file.'
             )
@@ -125,7 +130,9 @@ class MediaService:
             img.load()
         except UnidentifiedImageError as exc:
             raise MediaValidationError(
-                'Could not read that image. Please upload a valid JPG, PNG, or WEBP file.'
+                'That file looks corrupt or unreadable. Please upload a valid JPG, PNG, GIF, or WEBP image.'
+                if allowed_formats == self.settings.avatar_pil_formats
+                else 'Could not read that image. Please upload a valid JPG, PNG, or WEBP file.'
             ) from exc
         except OSError as exc:
             raise MediaValidationError(
@@ -134,6 +141,10 @@ class MediaService:
 
         fmt = (img.format or '').upper()
         if fmt not in allowed_formats:
+            if allowed_formats == self.settings.avatar_pil_formats:
+                raise MediaValidationError(
+                    'Unsupported image format. Please upload a JPG, PNG, GIF, or WEBP file.'
+                )
             raise MediaValidationError(
                 'Unsupported image format. Please upload a JPG, PNG, or WEBP file.'
             )
@@ -217,6 +228,34 @@ class MediaService:
             raise MediaValidationError('The cover image is empty.')
         storage = FileStorage(stream=io.BytesIO(raw), filename=filename_hint)
         return self.save_book_cover(storage)
+
+    def process_avatar_to_data_uri(self, file_storage: FileStorage) -> str:
+        """Validate, resize, and encode an avatar as a WEBP data-URI for User.avatar.
+
+        Accepts JPEG / PNG / GIF / WEBP input. Always stores a compact WEBP data-URI
+        so the DB TEXT column stays well within limits. Does not touch the database.
+        """
+        img = self.validate_image(
+            file_storage,
+            max_bytes=self.settings.avatar_max_bytes,
+            allowed_formats=self.settings.avatar_pil_formats,
+            size_error='Image must be under 2 MB.',
+        )
+        img = self.resize_image(img, max_edge=self.settings.avatar_max_edge)
+        img = self.to_rgb_webp_ready(img)
+        out = io.BytesIO()
+        try:
+            img.save(out, format='WEBP', quality=85, method=6)
+        except OSError as exc:
+            raise MediaValidationError(
+                'Could not process that image. Please try a different file.'
+            ) from exc
+        data = out.getvalue()
+        if not data:
+            raise MediaValidationError(
+                'Could not process that image. Please try a different file.'
+            )
+        return f'data:image/webp;base64,{base64.b64encode(data).decode("ascii")}'
 
     def save_avatar_file(self, file_storage: FileStorage) -> str:
         """Validate and store an avatar under uploads/avatars/ (future file-based avatars).

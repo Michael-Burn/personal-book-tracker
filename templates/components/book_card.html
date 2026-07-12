@@ -9,7 +9,7 @@
 {% set duration = reading_service.calculate_duration(book.started_reading_at, book.finished_reading_at) %}
 {% set quote_n = book.quotes|length %}
 {% set is_readonly = readonly is defined and readonly %}
-<article class="lib-card{% if is_readonly %} lib-card--readonly{% endif %}" data-status="{{ status }}" data-title="{{ book.title|lower }}" data-author="{{ card_author|lower }}">
+<article class="lib-card{% if is_readonly %} lib-card--readonly{% endif %}" data-status="{{ status }}" data-title="{{ book.title|lower }}" data-author="{{ card_author|lower }}" data-search="{{ book.title|lower }} {{ card_author|lower }}">
     <div class="lib-card-media">
         {% with cover_filename=book.cover_filename, title=book.title, alt='Cover of ' ~ book.title, thumb_class='book-cover-thumb--card', svg_size=36 %}
         {% include 'components/cover_image.html' %}

@@ -1,7 +1,6 @@
 import os
 import re
 import io
-import random
 import math
 import secrets
 import sys
@@ -278,7 +277,7 @@ def register():
 def login():
     if current_user.is_authenticated:
         if current_user.username == ADMIN_USERNAME:
-            return redirect(url_for('admin_users'))
+            return redirect(url_for('admin_explorer'))
         return redirect(url_for('authors_page'))
     error = None
     if request.method == 'POST':
@@ -294,7 +293,7 @@ def login():
                 if next_url and next_url.startswith('/'):
                     return redirect(next_url)
                 if user.username == ADMIN_USERNAME:
-                    return redirect(url_for('admin_users'))
+                    return redirect(url_for('admin_explorer'))
                 return redirect(url_for('authors_page'))
         else:
             error = 'Invalid username or password.'
@@ -378,47 +377,40 @@ def logout():
     return redirect(url_for('login'))
 
 
-_AVATAR_ALLOWED_MIME = {'image/jpeg', 'image/png', 'image/gif', 'image/webp'}
-_MAX_AVATAR_BYTES = 2 * 1024 * 1024  # 2 MB
-
-
 @app.route('/settings/avatar', methods=['POST'])
 @login_required
 def upload_avatar():
+    """Upload and persist a profile avatar as a WEBP data-URI on User.avatar.
+
+    Existing avatar is left unchanged unless processing + DB commit both succeed.
+    """
     f = request.files.get('avatar')
-    if not f or f.filename == '':
+    if not f or not f.filename:
+        flash('Please choose an image file to upload.', 'avatar_error')
         return redirect(url_for('authors_page'))
 
-    raw = f.read(_MAX_AVATAR_BYTES + 1)
-    if len(raw) > _MAX_AVATAR_BYTES:
-        flash('Image must be under 2 MB.', 'avatar_error')
-        return redirect(url_for('authors_page'))
-
-    # Validate with Pillow and re-encode to strip EXIF / malicious data
+    previous_avatar = current_user.avatar
     try:
-        src = Image.open(io.BytesIO(raw))
-        src.load()
-        fmt = src.format or 'PNG'
-        if fmt not in ('JPEG', 'PNG', 'GIF', 'WEBP'):
-            raise ValueError('unsupported format')
-        # Normalise palette/RGBA → RGB for JPEG, keep RGBA for PNG
-        if fmt == 'JPEG' and src.mode != 'RGB':
-            src = src.convert('RGB')
-        # Resize if larger than 400×400 to save space
-        src.thumbnail((400, 400))
-        ext = 'jpg' if fmt == 'JPEG' else fmt.lower()
-        out = io.BytesIO()
-        save_kw = {'quality': 85, 'optimize': True} if fmt == 'JPEG' else {}
-        src.save(out, format=fmt, **save_kw)
-        data = out.getvalue()
+        data_uri = media_service.process_avatar_to_data_uri(f)
+    except MediaValidationError as exc:
+        flash(exc.message, 'avatar_error')
+        return redirect(url_for('authors_page'))
     except Exception:
-        flash('Could not process image. Please upload a valid JPEG, PNG, GIF, or WEBP.', 'avatar_error')
+        app.logger.exception('Avatar processing failed for user_id=%s', current_user.id)
+        flash('Could not process that image. Please try a different file.', 'avatar_error')
         return redirect(url_for('authors_page'))
 
-    import base64
-    mime_map = {'JPEG': 'image/jpeg', 'PNG': 'image/png', 'GIF': 'image/gif', 'WEBP': 'image/webp'}
-    current_user.avatar = f'data:{mime_map[fmt]};base64,{base64.b64encode(data).decode()}'
-    db.session.commit()
+    try:
+        current_user.avatar = data_uri
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        # Keep the in-memory user object consistent with the rolled-back row.
+        current_user.avatar = previous_avatar
+        app.logger.exception('Avatar DB save failed for user_id=%s', current_user.id)
+        flash('Could not save your avatar. Please try again.', 'avatar_error')
+        return redirect(url_for('authors_page'))
+
     return redirect(url_for('authors_page'))
 
 
@@ -898,7 +890,10 @@ def serve_book_cover(filename):
 
 @app.errorhandler(413)
 def request_entity_too_large(_error):
-    flash('Cover image must be 5 MB or smaller.', 'cover_error')
+    if request.path.rstrip('/').endswith('/settings/avatar'):
+        flash('Image must be under 2 MB.', 'avatar_error')
+    else:
+        flash('Cover image must be 5 MB or smaller.', 'cover_error')
     return redirect(request.referrer or url_for('authors_page'))
 
 
@@ -1153,24 +1148,23 @@ def unfavourite_quote(quote_id):
 @app.route('/api/quotes/random')
 @login_required
 def random_quote():
-    """Return the favourite quote when set; otherwise a random passage."""
+    """Return the user's favourite quote only — never a random passage.
+
+    Returns 204 when no favourite is set so the UI can show an empty state.
+    """
     favourite = Quote.query.filter_by(
         user_id=current_user.id, is_favourite=True
     ).first()
-    if favourite:
-        q = favourite
-    else:
-        quotes = Quote.query.filter_by(user_id=current_user.id).all()
-        if not quotes:
-            return ('', 204)
-        q = random.choice(quotes)
+    if not favourite:
+        return ('', 204)
+    q = favourite
     return jsonify({
         'id': q.id,
         'text': q.text,
         'page_ref': q.page_ref,
         'book_title': q.book.title,
         'author': q.book.author,
-        'is_favourite': bool(q.is_favourite),
+        'is_favourite': True,
     })
 
 
@@ -1194,7 +1188,7 @@ def quotes_page():
 @app.route('/admin')
 @admin_required
 def admin_home():
-    return redirect(url_for('admin_users'))
+    return redirect(url_for('admin_explorer'))
 
 
 @app.route('/admin/users')
@@ -1235,7 +1229,7 @@ def admin_users():
         orphaned_count=stats['orphaned_count'],
         flash_errors=flash_errors,
         flash_messages=flash_messages,
-        admin_nav='dashboard',
+        admin_nav='analytics',
     )
 
 
@@ -1268,7 +1262,52 @@ def admin_explorer():
         q=q,
         sort=sort,
         order=order,
-        admin_nav='explorer',
+        admin_nav='users',
+    )
+
+
+@app.route('/admin/authors')
+@admin_required
+def admin_authors():
+    """Global author catalogue — compact management table (existing book rows only)."""
+    q = (request.args.get('q') or '').strip().lower()
+    books = Book.query.all()
+    author_map: dict[str, dict] = {}
+    for b in books:
+        name = b.author or 'Unknown'
+        entry = author_map.setdefault(
+            name,
+            {'name': name, 'book_count': 0, 'readers': set(), 'rating_sum': 0, 'rating_count': 0, 'wild_count': 0},
+        )
+        entry['book_count'] += 1
+        if b.user_id is not None:
+            entry['readers'].add(b.user_id)
+        if has_rating(b):
+            entry['rating_sum'] += b.rating
+            entry['rating_count'] += 1
+        if b.is_wild:
+            entry['wild_count'] += 1
+    rows = []
+    for entry in author_map.values():
+        if q and q not in entry['name'].lower():
+            continue
+        rows.append({
+            'name': entry['name'],
+            'book_count': entry['book_count'],
+            'reader_count': len(entry['readers']),
+            'avg_rating': (
+                round(entry['rating_sum'] / entry['rating_count'], 1)
+                if entry['rating_count'] else None
+            ),
+            'wild_count': entry['wild_count'],
+        })
+    rows.sort(key=lambda r: (-r['book_count'], r['name'].lower()))
+    return render_template(
+        'admin_authors.html',
+        rows=rows,
+        q=request.args.get('q') or '',
+        admin_nav='authors',
+        total_matched=len(rows),
     )
 
 
@@ -1312,7 +1351,7 @@ def admin_user_detail(user_id):
         reading_statuses=ReadingStatus.choices(),
         flash_errors=flash_errors,
         flash_messages=flash_messages,
-        admin_nav='explorer',
+        admin_nav='users',
     )
 
 
@@ -1321,6 +1360,7 @@ def admin_user_detail(user_id):
 def admin_library():
     user_id = request.args.get('user_id', type=int)
     author = (request.args.get('author') or '').strip()
+    q = (request.args.get('q') or '').strip()
     status = (request.args.get('status') or '').strip()
     rating = request.args.get('rating', type=int)
     wild_raw = (request.args.get('wild') or '').strip().lower()
@@ -1333,6 +1373,8 @@ def admin_library():
         query = query.filter(Book.user_id == user_id)
     if author:
         query = query.filter(Book.author.ilike(f'%{author}%'))
+    if q:
+        query = query.filter(Book.title.ilike(f'%{q}%'))
     if status and ReadingStatus.is_valid(status):
         query = query.filter(Book.reading_status == status)
     if rating is not None and 1 <= rating <= 5:
@@ -1359,6 +1401,7 @@ def admin_library():
         authors=authors,
         filter_user_id=user_id,
         filter_author=author,
+        filter_q=q,
         filter_status=status,
         filter_rating=rating,
         filter_wild=wild_raw,
@@ -1475,6 +1518,16 @@ def _repair_db():
                         CONSTRAINT uq_reading_goal_user_year UNIQUE (user_id, year)
                     )
                 '''))
+            # Separate transaction: widen legacy VARCHAR(120) avatar → TEXT for data-URIs.
+            # Must not share a transaction with the statements above (Postgres aborts the
+            # whole txn on a single error). Idempotent when already TEXT.
+            try:
+                with db.engine.begin() as conn:
+                    conn.execute(sa.text(
+                        'ALTER TABLE "user" ALTER COLUMN avatar TYPE TEXT'
+                    ))
+            except Exception as alter_exc:
+                print(f'[REPAIR] avatar TEXT widen skipped: {alter_exc}', flush=True)
             print('[REPAIR] DB schema repair completed.', flush=True)
         except Exception as exc:
             print(f'[REPAIR] DB schema repair error: {exc}', flush=True)

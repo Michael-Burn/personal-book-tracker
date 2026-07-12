@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Admin Hub — Book Tracker{% endblock %}
+{% block title %}Analytics — Admin Hub{% endblock %}
 
 {% block extra_head %}
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
@@ -22,6 +22,17 @@
     {% for msg in flash_messages %}
     <div class="alert-success hub-flash">{{ msg }}</div>
     {% endfor %}
+
+    <div class="hub-page-header">
+        <div>
+            <h1 class="hub-page-title">Analytics</h1>
+            <p class="hub-page-sub">System KPIs, activity charts, and community favourites.</p>
+        </div>
+        <button type="button" class="admin-btn admin-btn--secondary" id="openUserMgmt" aria-label="Manage users"
+                onclick="document.getElementById('userMgmtModal').classList.add('open')">
+            Manage Users
+        </button>
+    </div>
 
     <!-- ── KPI row ────────────────────────────────────────── -->
     <div class="hub-kpi-row">

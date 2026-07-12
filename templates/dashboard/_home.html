@@ -1,4 +1,4 @@
-{# Home — hero, continue reading, quick actions, goal, finished, snapshot #}
+{# Home — lightweight daily dashboard #}
 
 <!-- ── Personalized Hero ──────────────────────── -->
 <section class="home-hero home-hero--{{ home_hero.scenario }}" aria-label="Your reading journey">
@@ -40,18 +40,7 @@
         {% endif %}
     </div>
     {% if currently_reading %}
-    <div id="homeContinueSkel" class="home-continue-skel" aria-hidden="true">
-        {% for _ in range([currently_reading|length, 3]|min) %}
-        <div class="skel-row">
-            <div class="skel skel-cover" style="width:56px;aspect-ratio:2/3;margin:0"></div>
-            <div class="skel-row-text">
-                <div class="skel skel-line"></div>
-                <div class="skel skel-line skel-line--sm"></div>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-    <ul class="home-continue-list" id="homeContinueList" hidden>
+    <ul class="home-continue-list">
         {% for item in currently_reading %}
         <li class="home-continue-card">
             {% set cover_filename = item.book.cover_filename %}
@@ -78,59 +67,13 @@
         </li>
         {% endfor %}
     </ul>
-    <script>
-    (function(){
-        var skel = document.getElementById('homeContinueSkel');
-        var list = document.getElementById('homeContinueList');
-        if(skel) skel.remove();
-        if(list) list.hidden = false;
-    })();
-    </script>
     {% else %}
     <div class="home-empty home-empty--continue">
         <p class="home-empty-title">{% if is_empty %}Add your first book.{% else %}No book in progress right now.{% endif %}</p>
-        <p class="home-empty-sub">{% if is_empty %}Add a title and mark it Currently Reading — this space will keep your place.{% else %}Open your Want to Read list, or add something new and set the status to Currently Reading.{% endif %}</p>
-        <a href="{{ url_for('add') }}?next={{ url_for('authors_page', view='home') }}" class="home-empty-cta open-add-modal">Add a book</a>
+        <p class="home-empty-sub">{% if is_empty %}Add a title and mark it Currently Reading — this space will keep your place.{% else %}Open Authors or your Want to Read list, or add something new and set Currently Reading.{% endif %}</p>
     </div>
     {% endif %}
 </section>
-
-<!-- ── Quick Actions ──────────────────────────── -->
-<nav class="home-actions" aria-label="Quick actions">
-    <a href="{{ url_for('add') }}?next={{ url_for('authors_page', view='home') }}" class="home-action open-add-modal">
-        <span class="home-action-ico" aria-hidden="true">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        </span>
-        <span class="home-action-lbl">Add Book</span>
-    </a>
-    {% if currently_reading %}
-    <a href="#continue-reading" class="home-action">
-        <span class="home-action-ico" aria-hidden="true">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-        </span>
-        <span class="home-action-lbl">Continue Reading</span>
-    </a>
-    {% else %}
-    <a href="{{ url_for('add') }}?next={{ url_for('authors_page', view='home') }}" class="home-action open-add-modal">
-        <span class="home-action-ico" aria-hidden="true">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-        </span>
-        <span class="home-action-lbl">Start Reading</span>
-    </a>
-    {% endif %}
-    <a href="{{ url_for('reading_year_page') }}" class="home-action">
-        <span class="home-action-ico" aria-hidden="true">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        </span>
-        <span class="home-action-lbl">My Reading Year</span>
-    </a>
-    <a href="#reading-goal" class="home-action">
-        <span class="home-action-ico" aria-hidden="true">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
-        </span>
-        <span class="home-action-lbl">Reading Goal</span>
-    </a>
-</nav>
 
 <!-- ── Annual Reading Goal ────────────────────── -->
 <section id="reading-goal" class="rs-goal" aria-label="{{ reading_goal.year }} reading goal">
@@ -243,3 +186,25 @@
     <p class="home-snapshot-text">{{ reading_snapshot.text }}</p>
 </aside>
 {% endif %}
+
+<!-- ── Quick Actions ──────────────────────────── -->
+<nav class="home-actions" aria-label="Quick actions">
+    <a href="{{ url_for('add') }}?next={{ url_for('authors_page', view='home') }}" class="home-action open-add-modal">
+        <span class="home-action-ico" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </span>
+        <span class="home-action-lbl">Add Book</span>
+    </a>
+    <a href="{{ url_for('reading_year_page') }}" class="home-action">
+        <span class="home-action-ico" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </span>
+        <span class="home-action-lbl">My Reading Year</span>
+    </a>
+    <a href="{{ url_for('quotes_page') }}" class="home-action">
+        <span class="home-action-ico" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </span>
+        <span class="home-action-lbl">Quotes</span>
+    </a>
+</nav>

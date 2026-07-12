@@ -1,16 +1,20 @@
-{# Library — bookshelf, filters, density modes, book cards #}
+{# Library — searchable catalogue (books by author live on Authors) #}
 
 <div class="page-intro">
-    <h2 class="page-intro-title">Bookshelf</h2>
-    <p class="page-intro-sub">{% if is_empty %}Your shelf is empty — add a book to start building your library.{% else %}{{ books|length }} book{{ 's' if books|length != 1 else '' }} in your library{% endif %}</p>
+    <h2 class="page-intro-title">Library</h2>
+    <p class="page-intro-sub">{% if is_empty %}Your catalogue is empty — add a book to start.{% else %}{{ books|length }} book{{ 's' if books|length != 1 else '' }} · browse by author on <a href="{{ url_for('authors_page', view='authors') }}">Authors</a>{% endif %}</p>
 </div>
 
 {% if not is_empty %}
 <div class="lib-toolbar lib-toolbar--library">
     <div class="lib-toolbar-left">
+        <div class="db-search-wrap">
+            <svg class="db-search-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input id="bookshelfSearch" class="db-search" type="search" placeholder="Search title or author…" aria-label="Search library by title or author" autocomplete="off">
+        </div>
         <div class="ab-status-filter">
             <label for="bookshelfStatusFilter" class="ab-status-filter-lbl">Status</label>
-            <select id="bookshelfStatusFilter" class="db-sort" aria-label="Filter bookshelf by reading status">
+            <select id="bookshelfStatusFilter" class="db-sort" aria-label="Filter library by reading status">
                 <option value="">All statuses</option>
                 {% for value, label in reading_statuses %}
                 <option value="{{ value }}">{{ label }}</option>
@@ -31,8 +35,8 @@
     <div class="db-empty-icon">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
     </div>
-    <h3 class="db-empty-title">No books with this status.</h3>
-    <p class="db-empty-sub">Try another filter, or clear Status to see your full shelf.</p>
+    <h3 class="db-empty-title">No matching books.</h3>
+    <p class="db-empty-sub">Try another search or status, or clear filters to see your full catalogue.</p>
 </div>
 {% else %}
 <div class="db-empty">

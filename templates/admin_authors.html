@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Authors — Admin Hub{% endblock %}
+
+{% block body_class_attr %} class="hub-body"{% endblock %}
+
+{% block body %}
+<div class="hub-wrap">
+    {% set nav_variant='admin' %}
+    {% include 'components/navbar.html' %}
+
+    <div class="hub-page-header">
+        <div>
+            <h1 class="hub-page-title">Authors</h1>
+            <p class="hub-page-sub">Authors across all users — book counts from existing library data.</p>
+        </div>
+        <span class="hub-page-count">{{ total_matched }} author{{ 's' if total_matched != 1 else '' }}</span>
+    </div>
+
+    <form class="hub-toolbar hub-toolbar--authors" method="GET" action="{{ url_for('admin_authors') }}">
+        <label class="hub-toolbar-field hub-toolbar-field--grow">
+            <span>Search</span>
+            <input type="search" name="q" value="{{ q }}" class="hub-input" placeholder="Author name…" autocomplete="off" aria-label="Search authors">
+        </label>
+        <button type="submit" class="admin-btn admin-btn--secondary">Filter</button>
+        <a href="{{ url_for('admin_authors') }}" class="hub-toolbar-clear">Reset</a>
+    </form>
+
+    {% if rows %}
+    <div class="hub-table-wrap">
+        <table class="hub-data-table" aria-label="Authors">
+            <thead>
+                <tr>
+                    <th scope="col">Author</th>
+                    <th scope="col">Books</th>
+                    <th scope="col">Readers</th>
+                    <th scope="col">Avg rating</th>
+                    <th scope="col">Wild</th>
+                    <th scope="col" class="hub-th-action">Open</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr>
+                    <td data-label="Author" class="hub-td-primary">{{ row.name }}</td>
+                    <td data-label="Books">{{ row.book_count }}</td>
+                    <td data-label="Readers">{{ row.reader_count }}</td>
+                    <td data-label="Avg rating">{% if row.avg_rating is not none %}{{ '%.1f'|format(row.avg_rating) }}{% else %}—{% endif %}</td>
+                    <td data-label="Wild">{{ row.wild_count }}</td>
+                    <td data-label="Open" class="hub-td-action">
+                        <a href="{{ url_for('admin_library', author=row.name) }}" class="hub-table-link">Library</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="hub-empty">No authors match this search.</p>
+    {% endif %}
+</div>
+{% endblock %}

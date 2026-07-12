@@ -12,13 +12,13 @@
     <div class="hub-page-header">
         <div>
             <h1 class="hub-page-title">Global Library</h1>
-            <p class="hub-page-sub">Browse every book in the system with user, author, status, rating, and wild filters.</p>
+            <p class="hub-page-sub">Review every book — filters and sorting for management, not showcase.</p>
         </div>
         <span class="hub-page-count">{{ total_matched }} book{{ 's' if total_matched != 1 else '' }}</span>
     </div>
 
-    <form class="hub-toolbar hub-toolbar--wrap" method="GET" action="{{ url_for('admin_library') }}">
-        <label class="hub-toolbar-field">
+    <form class="hub-toolbar hub-toolbar--library" method="GET" action="{{ url_for('admin_library') }}">
+        <label class="hub-toolbar-field hub-toolbar-field--user">
             <span>User</span>
             <select name="user_id" class="hub-select">
                 <option value="">All users</option>
@@ -27,25 +27,29 @@
                 {% endfor %}
             </select>
         </label>
-        <label class="hub-toolbar-field">
+        <label class="hub-toolbar-field hub-toolbar-field--author">
             <span>Author</span>
-            <input type="text" name="author" value="{{ filter_author }}" list="authorSuggestions" class="hub-input" placeholder="Any author" autocomplete="off">
+            <input type="text" name="author" value="{{ filter_author }}" list="authorSuggestions" class="hub-input" placeholder="Author" autocomplete="off" aria-label="Filter by author">
             <datalist id="authorSuggestions">
                 {% for a in authors %}
                 <option value="{{ a }}">
                 {% endfor %}
             </datalist>
         </label>
-        <label class="hub-toolbar-field">
+        <label class="hub-toolbar-field hub-toolbar-field--search">
+            <span>Search</span>
+            <input type="search" name="q" value="{{ filter_q }}" class="hub-input" placeholder="Title…" autocomplete="off" aria-label="Search by title">
+        </label>
+        <label class="hub-toolbar-field hub-toolbar-field--status">
             <span>Status</span>
             <select name="status" class="hub-select">
-                <option value="">All statuses</option>
+                <option value="">All</option>
                 {% for value, label in reading_statuses %}
                 <option value="{{ value }}" {% if filter_status == value %}selected{% endif %}>{{ label }}</option>
                 {% endfor %}
             </select>
         </label>
-        <label class="hub-toolbar-field">
+        <label class="hub-toolbar-field hub-toolbar-field--rating">
             <span>Rating</span>
             <select name="rating" class="hub-select">
                 <option value="">Any</option>
@@ -54,7 +58,7 @@
                 {% endfor %}
             </select>
         </label>
-        <label class="hub-toolbar-field">
+        <label class="hub-toolbar-field hub-toolbar-field--wild">
             <span>Wild</span>
             <select name="wild" class="hub-select">
                 <option value="" {% if not filter_wild %}selected{% endif %}>Any</option>
@@ -62,18 +66,46 @@
                 <option value="0" {% if filter_wild in ['0', 'false', 'no'] %}selected{% endif %}>Not wild</option>
             </select>
         </label>
-        <button type="submit" class="admin-btn admin-btn--secondary">Filter</button>
-        <a href="{{ url_for('admin_library') }}" class="hub-toolbar-clear">Reset</a>
+        <div class="hub-toolbar-actions">
+            <button type="submit" class="admin-btn admin-btn--secondary">Filter</button>
+            <a href="{{ url_for('admin_library') }}" class="hub-toolbar-clear">Reset</a>
+        </div>
     </form>
 
     {% if books %}
-    <div class="lib-grid hub-lib-grid">
-        {% for book in books %}
-        {% set owner_name = book.owner.username if book.owner else 'Unassigned' %}
-        {% with readonly=true, book_owner=owner_name %}
-        {% include 'components/book_card.html' %}
-        {% endwith %}
-        {% endfor %}
+    <div class="hub-table-wrap">
+        <table class="hub-data-table" aria-label="Global library">
+            <thead>
+                <tr>
+                    <th scope="col">User</th>
+                    <th scope="col">Title</th>
+                    <th scope="col">Author</th>
+                    <th scope="col">Rating</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Wild</th>
+                    <th scope="col">Finished</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for book in books %}
+                <tr>
+                    <td data-label="User">
+                        {% if book.owner %}
+                        <a href="{{ url_for('admin_user_detail', user_id=book.owner.id) }}" class="hub-table-link">{{ book.owner.username }}</a>
+                        {% else %}
+                        <span class="hub-muted">Unassigned</span>
+                        {% endif %}
+                    </td>
+                    <td data-label="Title" class="hub-td-primary">{{ book.title }}</td>
+                    <td data-label="Author">{{ book.author }}</td>
+                    <td data-label="Rating">{% if book.rating %}{{ book.rating }}{% else %}—{% endif %}</td>
+                    <td data-label="Status">{{ ReadingStatus.chip_label(book.reading_status or 'finished') }}</td>
+                    <td data-label="Wild">{% if book.is_wild %}Yes{% else %}—{% endif %}</td>
+                    <td data-label="Finished">{% if book.finished_reading_at %}{{ book.finished_reading_at.strftime('%Y-%m-%d') }}{% else %}—{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
     {% else %}
     <p class="hub-empty">No books match these filters.</p>

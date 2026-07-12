@@ -1,8 +1,9 @@
 {% extends "base.html" %}
+{# yd must be set outside blocks — Jinja block scope does not share {% set %} with sibling blocks #}
+{% set yd = year_data %}
 {% block title %}My Reading Year {{ year_data.year }} · Kwalitec Library{% endblock %}
 {% block body_class_attr %} class="db-body"{% endblock %}
 {% block body %}
-{% set yd = year_data %}
 {% set nav_variant = 'reading_year' %}
 {% include 'components/navbar.html' %}
 

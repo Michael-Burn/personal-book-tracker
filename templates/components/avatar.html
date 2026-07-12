@@ -1,12 +1,18 @@
 {# Avatar with initials fallback.
    Params:
-     src       — avatar data-URI / URL or None
+     src       — avatar data-URI / URL / legacy filename or None
      initial   — single letter for fallback (required)
      img_class — optional class on img (default avatar-img)
      alt       — img alt text (default "Avatar")
 #}
 {% if src %}
-<img src="{{ src }}" class="{{ img_class|default('avatar-img') }}" alt="{{ alt|default('Avatar') }}"
+{% if src.startswith('data:') or src.startswith('https://') or src.startswith('http://') or src.startswith('/') %}
+{% set avatar_src = src %}
+{% else %}
+{# Legacy disk filename from pre–data-URI avatars #}
+{% set avatar_src = url_for('static', filename='avatars/' ~ src) %}
+{% endif %}
+<img src="{{ avatar_src }}" class="{{ img_class|default('avatar-img') }}" alt="{{ alt|default('Avatar') }}"
      onerror="this.style.display='none'; var i=this.nextElementSibling; if(i){ i.hidden=false; i.removeAttribute('hidden'); }">
 <span class="avatar-initials" hidden aria-hidden="true">{{ initial|upper }}</span>
 {% else %}
