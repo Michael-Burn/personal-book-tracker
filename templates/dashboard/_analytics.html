@@ -26,42 +26,42 @@
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
         </div>
         <div class="rs-kpi-val">{{ kpis.books_finished }}</div>
-        <div class="rs-kpi-lbl">Books Finished</div>
+        <div class="rs-kpi-lbl">Finished</div>
     </div>
     <div class="rs-kpi-card rs-kpi-card--reading">
         <div class="rs-kpi-icon" aria-hidden="true">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
         </div>
         <div class="rs-kpi-val">{{ kpis.currently_reading }}</div>
-        <div class="rs-kpi-lbl">Currently Reading</div>
+        <div class="rs-kpi-lbl">Reading</div>
     </div>
     <div class="rs-kpi-card rs-kpi-card--want">
         <div class="rs-kpi-icon" aria-hidden="true">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
         </div>
         <div class="rs-kpi-val">{{ kpis.want_to_read }}</div>
-        <div class="rs-kpi-lbl">Want To Read</div>
+        <div class="rs-kpi-lbl">Want to Read</div>
     </div>
     <div class="rs-kpi-card rs-kpi-card--rating">
         <div class="rs-kpi-icon" aria-hidden="true">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
         </div>
         <div class="rs-kpi-val">{% if kpis.average_rating_display %}{{ kpis.average_rating_display }}{% else %}—{% endif %}</div>
-        <div class="rs-kpi-lbl">Average Rating</div>
+        <div class="rs-kpi-lbl">Avg Rating</div>
     </div>
     <div class="rs-kpi-card rs-kpi-card--wild">
         <div class="rs-kpi-icon" aria-hidden="true">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
         </div>
         <div class="rs-kpi-val">{{ kpis.wild_books }}</div>
-        <div class="rs-kpi-lbl">Wild Books</div>
+        <div class="rs-kpi-lbl">Wild</div>
     </div>
     <div class="rs-kpi-card rs-kpi-card--author">
         <div class="rs-kpi-icon" aria-hidden="true">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         </div>
         <div class="rs-kpi-val rs-kpi-val--text">{% if kpis.favourite_author %}{{ kpis.favourite_author }}{% else %}—{% endif %}</div>
-        <div class="rs-kpi-lbl">Favourite Author</div>
+        <div class="rs-kpi-lbl">Top Author</div>
     </div>
 </div>
 

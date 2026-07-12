@@ -2,7 +2,7 @@
 
 <div class="page-intro">
     <h2 class="page-intro-title">Library</h2>
-    <p class="page-intro-sub">{% if is_empty %}Your catalogue is empty — add a book to start.{% else %}{{ books|length }} book{{ 's' if books|length != 1 else '' }} · browse by author on <a href="{{ url_for('authors_page', view='authors') }}">Authors</a>{% endif %}</p>
+    <p class="page-intro-sub">{% if is_empty %}Add a book to start your catalogue.{% else %}{{ books|length }} Book{{ 's' if books|length != 1 else '' }}{% endif %}</p>
 </div>
 
 {% if not is_empty %}
@@ -39,15 +39,11 @@
     <p class="db-empty-sub">Try another search or status, or clear filters to see your full catalogue.</p>
 </div>
 {% else %}
-<div class="db-empty">
-    <div class="db-empty-icon">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-    </div>
-    <h3 class="db-empty-title">Add your first book.</h3>
-    <p class="db-empty-sub">Upload a cover or use Smart Book Entry — ratings, quotes, and your reading year grow from here.</p>
-    <a href="{{ url_for('add') }}?next={{ url_for('authors_page', view='library') }}" class="db-cta db-empty-cta open-add-modal">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Add Your First Book
-    </a>
-</div>
+{% with title='Add your first book.',
+        description='Upload a cover or use Smart Book Entry — ratings, quotes, and your reading year grow from here.',
+        action_href=url_for('add') ~ '?next=' ~ url_for('authors_page', view='library'),
+        action_label='Add Your First Book',
+        action_class='open-add-modal' %}
+{% include 'components/empty_state.html' %}
+{% endwith %}
 {% endif %}

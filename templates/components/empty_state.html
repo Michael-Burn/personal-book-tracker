@@ -1,0 +1,29 @@
+{# Reusable empty state.
+   Required: title
+   Optional: description, action_href, action_label, action_class,
+             secondary_href, secondary_label, icon_svg (HTML string),
+             extra_class
+#}
+<div class="empty-state{% if extra_class is defined and extra_class %} {{ extra_class }}{% endif %}" role="status">
+    <div class="empty-state__icon" aria-hidden="true">
+        {% if icon_svg is defined and icon_svg %}
+        {{ icon_svg|safe }}
+        {% else %}
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        {% endif %}
+    </div>
+    <h3 class="empty-state__title">{{ title }}</h3>
+    {% if description is defined and description %}
+    <p class="empty-state__desc">{{ description }}</p>
+    {% endif %}
+    {% if (action_href is defined and action_href) or (secondary_href is defined and secondary_href) %}
+    <div class="empty-state__actions">
+        {% if action_href is defined and action_href %}
+        <a href="{{ action_href }}" class="btn btn--primary{% if action_class is defined and action_class %} {{ action_class }}{% endif %}">{{ action_label or 'Continue' }}</a>
+        {% endif %}
+        {% if secondary_href is defined and secondary_href %}
+        <a href="{{ secondary_href }}" class="btn btn--ghost">{{ secondary_label or 'Cancel' }}</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>

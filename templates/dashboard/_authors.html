@@ -2,7 +2,7 @@
 
 <div class="page-intro">
     <h2 class="page-intro-title">Authors</h2>
-    <p class="page-intro-sub">{% if authors|length == 0 %}Your primary browsing view — authors appear once you add books.{% else %}{{ authors|length }} author{{ 's' if authors|length != 1 else '' }} · open any writer to see their books{% endif %}</p>
+    <p class="page-intro-sub">{% if authors|length == 0 %}Your authors appear once you add books.{% else %}{{ authors|length }} Author{{ 's' if authors|length != 1 else '' }}{% endif %}</p>
 </div>
 
 {% if authors|length > 0 %}
@@ -19,7 +19,7 @@
         <span class="authors-stat-val">{% if overall_avg %}{{ '%.1f'|format(overall_avg) }}{% else %}—{% endif %}</span>
         <span class="authors-stat-lbl">Avg rating</span>
     </div>
-    <div class="authors-stat authors-stat--wide">
+    <div class="authors-stat">
         <span class="authors-stat-val authors-stat-val--text">{% if most_active %}{{ most_active }}{% else %}—{% endif %}</span>
         <span class="authors-stat-lbl">Most books</span>
     </div>

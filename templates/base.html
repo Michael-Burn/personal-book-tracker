@@ -3,7 +3,8 @@
 <head>
     <meta charset="{% block charset %}UTF-8{% endblock %}">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% block title %}Book Tracker{% endblock %}</title>
+    <title>{% block title %}Kwalitec Library{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='design-system.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     {% block extra_head %}{% endblock %}
 </head>

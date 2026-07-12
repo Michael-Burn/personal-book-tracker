@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{% if active_view == 'library' %}Library{% elif active_view == 'analytics' %}Analytics{% elif active_view == 'authors' %}Authors{% else %}Home{% endif %} — Book Tracker{% endblock %}
+{% block title %}{% if active_view == 'library' %}Library{% elif active_view == 'analytics' %}Analytics{% elif active_view == 'authors' %}Authors{% else %}Home{% endif %} — Kwalitec Library{% endblock %}
 
 {% block extra_head %}
     {% if active_view == 'analytics' and not is_empty %}
@@ -294,10 +294,15 @@
             var qcPageSep = document.getElementById('qcPageSep');
             if(!card) return;
 
-            var ROTATE_MS = 12000;
+            var ROTATE_MS = 30000;
+            var FADE_MS = 450;
             var currentId = null;
             var timer = null;
             var inFlight = false;
+            var paused = false;
+            var fadeTimer = null;
+            var deadline = 0;
+            var remaining = ROTATE_MS;
 
             function hideSkel(){ if(skel) skel.style.display = 'none'; }
 
@@ -316,15 +321,32 @@
                 }
             }
 
+            function clearTimer(){
+                if(timer){ clearTimeout(timer); timer = null; }
+            }
+
             function showEmpty(){
                 hideSkel();
                 card.style.display = 'none';
                 if(empty) empty.style.display = '';
-                if(timer){ clearInterval(timer); timer = null; }
+                clearTimer();
+            }
+
+            function scheduleNext(ms){
+                clearTimer();
+                if(paused) return;
+                remaining = ms;
+                deadline = Date.now() + ms;
+                timer = setTimeout(function(){
+                    timer = null;
+                    remaining = ROTATE_MS;
+                    loadQuote(false);
+                }, ms);
             }
 
             function loadQuote(isInitial){
                 if(inFlight) return;
+                if(!isInitial && paused) return;
                 inFlight = true;
                 var url = '/api/quotes/random';
                 if(currentId != null) url += '?exclude=' + encodeURIComponent(currentId);
@@ -344,21 +366,36 @@
                             applyQuote(data);
                             card.style.display = '';
                             card.classList.add('qc-card--visible');
-                            if(!timer) timer = setInterval(function(){ loadQuote(false); }, ROTATE_MS);
+                            scheduleNext(ROTATE_MS);
                             return;
                         }
 
+                        if(fadeTimer) clearTimeout(fadeTimer);
                         card.classList.add('qc-card--fading');
-                        window.setTimeout(function(){
+                        fadeTimer = window.setTimeout(function(){
                             applyQuote(data);
                             card.classList.remove('qc-card--fading');
-                        }, 220);
+                            fadeTimer = null;
+                            scheduleNext(ROTATE_MS);
+                        }, FADE_MS);
                     })
                     .catch(function(){
                         inFlight = false;
                         if(isInitial) showEmpty();
                     });
             }
+
+            card.addEventListener('mouseenter', function(){
+                if(paused) return;
+                paused = true;
+                if(deadline) remaining = Math.max(0, deadline - Date.now());
+                clearTimer();
+            });
+            card.addEventListener('mouseleave', function(){
+                if(!paused) return;
+                paused = false;
+                scheduleNext(remaining > 0 ? remaining : ROTATE_MS);
+            });
 
             loadQuote(true);
         })();

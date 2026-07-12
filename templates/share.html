@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}{{ profile_user.username }}'s Top Picks — Book Tracker{% endblock %}
+{% block title %}{{ profile_user.username }}'s Top Picks — Kwalitec Library{% endblock %}
 
 {% block charset %}utf-8{% endblock %}
 
 {% block extra_head %}
     <meta property="og:title" content="{{ profile_user.username }}'s Top Book Picks">
-    <meta property="og:description" content="See {{ profile_user.username }}'s top-rated authors and books on Book Tracker.">
+    <meta property="og:description" content="See {{ profile_user.username }}'s top-rated authors and books on Kwalitec Library.">
     <meta property="og:type" content="website">
 {% endblock %}
 
@@ -210,7 +210,7 @@
                         <path d="M4 19.5A2.5 2.5 0 016.5 17H20"/>
                         <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>
                     </svg>
-                    <span>Book Tracker</span>
+                    <span>Kwalitec Library</span>
                 </div>
                 <div class="sp-footer-right">
                     {% if current_user.is_authenticated %}

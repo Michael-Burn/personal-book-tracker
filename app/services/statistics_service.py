@@ -435,17 +435,17 @@ class StatisticsService:
             if days:
                 day_bit = f'Day {days} with this one'
             elif started:
-                day_bit = f'Started {started.strftime("%b %d")}'
+                day_bit = f'Started Reading {started.strftime("%b %d")}'
             else:
                 day_bit = 'In progress'
             return {
                 'scenario': 'currently_reading',
-                'eyebrow': 'Currently reading',
+                'eyebrow': 'Reading Journey',
                 'title': book.title,
                 'message': (
-                    f'{day_bit} · by {book.author}. Pick up where you left off.'
+                    f'{day_bit} · by {book.author}. Record where you are in the journey.'
                 ),
-                'cta_label': 'Continue',
+                'cta_label': 'Update Progress',
                 'cta_anchor': 'continue',
                 'book': book,
                 'elapsed_days': days,
@@ -474,7 +474,7 @@ class StatisticsService:
                 'eyebrow': 'Welcome',
                 'title': f'Your library is waiting, {name}.',
                 'message': (
-                    'Add your first book and the home page will start reflecting '
+                    'Add your first book and Home will begin reflecting '
                     'your reading journey.'
                 ),
                 'cta_label': 'Add Book',

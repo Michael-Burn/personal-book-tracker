@@ -1,4 +1,4 @@
-{# Home — lightweight daily dashboard #}
+{# Home — Reading Journal dashboard #}
 
 <!-- ── Personalized Hero ──────────────────────── -->
 <section class="home-hero home-hero--{{ home_hero.scenario }}" aria-label="Your reading journey">
@@ -9,7 +9,6 @@
         <div class="home-hero-actions">
             {% if home_hero.cta_anchor == 'continue' and currently_reading %}
             <a href="{{ url_for('edit', id=currently_reading[0].book.id) }}" class="home-hero-cta">{{ home_hero.cta_label }}</a>
-            <a href="#continue-reading" class="home-hero-cta home-hero-cta--ghost">View shelf</a>
             {% elif home_hero.cta_anchor == 'goal' %}
             <a href="#reading-goal" class="home-hero-cta">{{ home_hero.cta_label }}</a>
             {% elif home_hero.cta_anchor == 'reading_year' %}
@@ -31,10 +30,10 @@
     {% endif %}
 </section>
 
-<!-- ── Continue Reading ───────────────────────── -->
-<section id="continue-reading" class="home-continue" aria-label="Continue reading">
+<!-- ── Currently Reading ──────────────────────── -->
+<section id="continue-reading" class="home-continue" aria-label="Currently reading">
     <div class="home-section-head">
-        <h2 class="rs-section-title">Continue Reading</h2>
+        <h2 class="rs-section-title">Currently Reading</h2>
         {% if currently_reading %}
         <span class="home-section-count">{{ currently_reading|length }} in progress</span>
         {% endif %}
@@ -57,20 +56,27 @@
                     <span class="home-continue-days">{{ item.elapsed_days }} day{{ 's' if item.elapsed_days != 1 else '' }} reading</span>
                     {% endif %}
                     {% if item.started_reading_at %}
-                    <span class="home-continue-started">Started {{ item.started_reading_at.strftime('%b %d, %Y') }}</span>
+                    <span class="home-continue-started">Started Reading {{ item.started_reading_at.strftime('%b %d, %Y') }}</span>
                     {% else %}
                     <span class="home-continue-started home-continue-started--muted">Add a start date to track days</span>
                     {% endif %}
                 </div>
             </div>
-            <a href="{{ url_for('edit', id=item.book.id) }}" class="home-continue-btn">Continue</a>
+            <div class="home-continue-actions">
+                <a href="{{ url_for('edit', id=item.book.id) }}" class="home-continue-btn">Update Progress</a>
+                <button type="button" class="home-continue-btn home-continue-btn--ghost open-quote-modal"
+                        data-book-id="{{ item.book.id }}"
+                        data-book-title="{{ item.book.title }}"
+                        data-author="{{ item.book.author }}">Add Quote</button>
+                <a href="{{ url_for('edit', id=item.book.id) }}" class="home-continue-btn home-continue-btn--ghost">Mark Finished</a>
+            </div>
         </li>
         {% endfor %}
     </ul>
     {% else %}
     <div class="home-empty home-empty--continue">
-        <p class="home-empty-title">{% if is_empty %}Add your first book.{% else %}No book in progress right now.{% endif %}</p>
-        <p class="home-empty-sub">{% if is_empty %}Add a title and mark it Currently Reading — this space will keep your place.{% else %}Open Authors or your Want to Read list, or add something new and set Currently Reading.{% endif %}</p>
+        <p class="home-empty-title">{% if is_empty %}Add your first book.{% else %}Nothing in progress right now.{% endif %}</p>
+        <p class="home-empty-sub">{% if is_empty %}Add a title and mark it Currently Reading — your journey starts here.{% else %}Mark a book as Currently Reading to begin recording this stretch of your journey.{% endif %}</p>
     </div>
     {% endif %}
 </section>
@@ -165,7 +171,7 @@
                 <div class="home-finished-main">
                     <span class="home-finished-title">{{ item.book.title }}</span>
                     <span class="home-finished-author">{{ item.book.author }}</span>
-                    <span class="home-finished-date">{% if item.finished_reading_at %}Finished {{ item.finished_reading_at.strftime('%b %d, %Y') }}{% else %}Finished{% endif %}</span>
+                    <span class="home-finished-date">{% if item.finished_reading_at %}Finished Reading {{ item.finished_reading_at.strftime('%b %d, %Y') }}{% else %}Finished Reading{% endif %}</span>
                 </div>
             </a>
         </li>
@@ -174,7 +180,7 @@
     {% else %}
     <div class="home-empty home-empty--finished">
         <p class="home-empty-title">{% if is_empty %}Finished books will gather here.{% else %}No recent finishes with dates yet.{% endif %}</p>
-        <p class="home-empty-sub">{% if is_empty %}When you close a book, add a finish date — your timeline becomes a reading history.{% else %}Mark a book Finished and set its finish date to build this shelf from your timeline.{% endif %}</p>
+        <p class="home-empty-sub">{% if is_empty %}When you finish a book, mark it Finished Reading — your timeline becomes a reading history.{% else %}Mark a book Finished Reading and set its finish date to build this shelf from your journey.{% endif %}</p>
     </div>
     {% endif %}
 </section>
@@ -189,12 +195,14 @@
 
 <!-- ── Quick Actions ──────────────────────────── -->
 <nav class="home-actions" aria-label="Quick actions">
+    {% if home_hero.cta_anchor != 'add' %}
     <a href="{{ url_for('add') }}?next={{ url_for('authors_page', view='home') }}" class="home-action open-add-modal">
         <span class="home-action-ico" aria-hidden="true">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         </span>
         <span class="home-action-lbl">Add Book</span>
     </a>
+    {% endif %}
     <a href="{{ url_for('reading_year_page') }}" class="home-action">
         <span class="home-action-ico" aria-hidden="true">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>

@@ -1,4 +1,4 @@
 {# Status chip — expects: status (str); ReadingStatus in template context #}
-<span class="status-chip status-chip--{{ status or 'finished' }}">
+<span class="badge status-chip status-chip--{{ status or 'finished' }} badge--{% if (status or 'finished') == 'want_to_read' %}want{% elif (status or 'finished') == 'finished' %}finished{% elif (status or 'finished') == 'reading' %}reading{% elif (status or 'finished') == 'dnf' %}dnf{% elif (status or 'finished') == 'rereading' %}rereading{% else %}finished{% endif %}">
     {{ ReadingStatus.chip_label(status or 'finished') }}
 </span>
