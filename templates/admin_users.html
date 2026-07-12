@@ -187,6 +187,29 @@
     </div>
     {% endif %}
 
+    <!-- ── Admin Tools ───────────────────────────────────────── -->
+    <div class="hub-section" style="margin-top: var(--space-8);">
+        <h2 class="hub-section-title" style="margin-bottom: var(--space-4);">Admin Tools</h2>
+        <div class="hub-kpi-card" style="max-width: 560px;">
+            <div style="display:flex; align-items:center; gap: 10px; margin-bottom: 10px;">
+                <div class="hub-kpi-icon hub-kpi-icon--blue">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                </div>
+                <div>
+                    <div class="hub-kpi-val" style="font-size: 1rem;">Backfill Book Covers</div>
+                    <div class="hub-kpi-lbl" style="text-transform:none; letter-spacing:0; font-size: 0.8rem; font-weight:400;">Searches Google Books &amp; Open Library to find and save covers for all books that don't have one stored yet.</div>
+                </div>
+            </div>
+            <button type="button" id="backfillBtn" class="admin-btn admin-btn--secondary" style="align-self: flex-start;">
+                Run Backfill
+            </button>
+            <div id="backfillStatus" style="margin-top: 12px; display: none;">
+                <div id="backfillProgress" style="font-size: 0.82rem; color: var(--color-text-muted); margin-bottom: 8px;"></div>
+                <div id="backfillResults"></div>
+            </div>
+        </div>
+    </div>
+
 </div><!-- /.hub-wrap -->
 
 <!-- ── User Management Modal ──────────────────────────── -->
@@ -292,28 +315,6 @@
         </div>
     </div>
 
-    <!-- ── Admin Tools ───────────────────────────────────────── -->
-    <div class="hub-section" style="margin-top: var(--space-8);">
-        <h2 class="hub-section-title" style="margin-bottom: var(--space-4);">Admin Tools</h2>
-        <div class="hub-kpi-card" style="max-width: 560px;">
-            <div style="display:flex; align-items:center; gap: 10px; margin-bottom: 10px;">
-                <div class="hub-kpi-icon hub-kpi-icon--blue">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-                </div>
-                <div>
-                    <div class="hub-kpi-val" style="font-size: 1rem;">Backfill Book Covers</div>
-                    <div class="hub-kpi-lbl" style="text-transform:none; letter-spacing:0; font-size: 0.8rem; font-weight:400;">Searches Google Books &amp; Open Library to find and save covers for all books that don't have one stored yet.</div>
-                </div>
-            </div>
-            <button type="button" id="backfillBtn" class="admin-btn admin-btn--secondary" style="align-self: flex-start;">
-                Run Backfill
-            </button>
-            <div id="backfillStatus" style="margin-top: 12px; display: none;">
-                <div id="backfillProgress" style="font-size: 0.82rem; color: var(--color-text-muted); margin-bottom: 8px;"></div>
-                <div id="backfillResults"></div>
-            </div>
-        </div>
-    </div>
 </div>
 {% endblock %}
 
