@@ -2,6 +2,7 @@ import os
 import re
 import io
 import math
+import random
 import secrets
 import sys
 from datetime import datetime
@@ -1148,23 +1149,29 @@ def unfavourite_quote(quote_id):
 @app.route('/api/quotes/random')
 @login_required
 def random_quote():
-    """Return the user's favourite quote only — never a random passage.
+    """Return a random quote from the user's library.
 
-    Returns 204 when no favourite is set so the UI can show an empty state.
+    Optional ``exclude`` query param (quote id) skips that passage so the
+    dashboard strip can rotate without immediately repeating.
+    Returns 204 when the user has no quotes.
     """
-    favourite = Quote.query.filter_by(
-        user_id=current_user.id, is_favourite=True
-    ).first()
-    if not favourite:
+    quotes = Quote.query.filter_by(user_id=current_user.id).all()
+    if not quotes:
         return ('', 204)
-    q = favourite
+
+    exclude_raw = request.args.get('exclude', type=int)
+    pool = quotes
+    if exclude_raw is not None and len(quotes) > 1:
+        pool = [q for q in quotes if q.id != exclude_raw] or quotes
+
+    q = random.choice(pool)
     return jsonify({
         'id': q.id,
         'text': q.text,
         'page_ref': q.page_ref,
         'book_title': q.book.title,
         'author': q.book.author,
-        'is_favourite': True,
+        'is_favourite': bool(q.is_favourite),
     })
 
 

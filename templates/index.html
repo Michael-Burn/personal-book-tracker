@@ -63,10 +63,15 @@
 
         </div><!-- /.db-card -->
 
-        <!-- ── Favourite quote strip (user-selected only) ─ -->
+        <!-- ── Rotating quote strip ─────────────────────── -->
+        <div id="quoteCardSkel" class="qc-card qc-card--skel" aria-hidden="true">
+            <div class="skel skel-line skel-line--lg"></div>
+            <div class="skel skel-line"></div>
+            <div class="skel skel-line skel-line--sm"></div>
+        </div>
         <div id="quoteCard" class="qc-card" style="display:none" aria-live="polite">
             <svg class="qc-mark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/></svg>
-            <p class="qc-label">Favourite quote</p>
+            <p class="qc-label">From your quotes</p>
             <p class="qc-quote" id="qcText"></p>
             <div class="qc-meta">
                 <span class="qc-book" id="qcBook"></span>
@@ -77,8 +82,8 @@
             </div>
         </div>
         <div id="quoteEmpty" class="qc-card qc-card--empty" style="display:none" role="status">
-            <p class="qc-empty-title">No favourite quote yet</p>
-            <p class="qc-empty-sub">Mark one passage with ★ Favourite on Quotes — only you choose it.</p>
+            <p class="qc-empty-title">No quotes yet</p>
+            <p class="qc-empty-sub">Save a passage from a book — this strip will rotate through them.</p>
             <a href="{{ url_for('quotes_page') }}" class="qc-empty-link">Go to Quotes</a>
         </div>
 
@@ -277,9 +282,10 @@
             }
         })();
 
-        // Favourite quote only (never random)
+        // Quote strip: randomly rotate across the user's quotes
         (function(){
             var card   = document.getElementById('quoteCard');
+            var skel   = document.getElementById('quoteCardSkel');
             var empty  = document.getElementById('quoteEmpty');
             var qcText = document.getElementById('qcText');
             var qcBook = document.getElementById('qcBook');
@@ -288,32 +294,73 @@
             var qcPageSep = document.getElementById('qcPageSep');
             if(!card) return;
 
-            fetch('/api/quotes/random')
-                .then(function(r){ return r.status === 204 ? null : r.json(); })
-                .then(function(data){
-                    if(!data){
-                        card.style.display = 'none';
-                        if(empty) empty.style.display = '';
-                        return;
-                    }
-                    if(empty) empty.style.display = 'none';
-                    qcText.textContent = data.text;
-                    qcBook.textContent = data.book_title;
-                    qcAuth.textContent = data.author;
-                    if(data.page_ref){
-                        qcPage.textContent = data.page_ref;
-                        qcPage.style.display = '';
-                        qcPageSep.style.display = '';
-                    } else {
-                        qcPage.style.display = 'none';
-                        qcPageSep.style.display = 'none';
-                    }
-                    card.style.display = '';
-                })
-                .catch(function(){
-                    card.style.display = 'none';
-                    if(empty) empty.style.display = '';
-                });
+            var ROTATE_MS = 12000;
+            var currentId = null;
+            var timer = null;
+            var inFlight = false;
+
+            function hideSkel(){ if(skel) skel.style.display = 'none'; }
+
+            function applyQuote(data){
+                currentId = data.id;
+                qcText.textContent = data.text;
+                qcBook.textContent = data.book_title;
+                qcAuth.textContent = data.author;
+                if(data.page_ref){
+                    qcPage.textContent = data.page_ref;
+                    qcPage.style.display = '';
+                    qcPageSep.style.display = '';
+                } else {
+                    qcPage.style.display = 'none';
+                    qcPageSep.style.display = 'none';
+                }
+            }
+
+            function showEmpty(){
+                hideSkel();
+                card.style.display = 'none';
+                if(empty) empty.style.display = '';
+                if(timer){ clearInterval(timer); timer = null; }
+            }
+
+            function loadQuote(isInitial){
+                if(inFlight) return;
+                inFlight = true;
+                var url = '/api/quotes/random';
+                if(currentId != null) url += '?exclude=' + encodeURIComponent(currentId);
+
+                fetch(url)
+                    .then(function(r){ return r.status === 204 ? null : r.json(); })
+                    .then(function(data){
+                        inFlight = false;
+                        if(!data){
+                            showEmpty();
+                            return;
+                        }
+                        if(empty) empty.style.display = 'none';
+                        hideSkel();
+
+                        if(isInitial){
+                            applyQuote(data);
+                            card.style.display = '';
+                            card.classList.add('qc-card--visible');
+                            if(!timer) timer = setInterval(function(){ loadQuote(false); }, ROTATE_MS);
+                            return;
+                        }
+
+                        card.classList.add('qc-card--fading');
+                        window.setTimeout(function(){
+                            applyQuote(data);
+                            card.classList.remove('qc-card--fading');
+                        }, 220);
+                    })
+                    .catch(function(){
+                        inFlight = false;
+                        if(isInitial) showEmpty();
+                    });
+            }
+
+            loadQuote(true);
         })();
     </script>
 

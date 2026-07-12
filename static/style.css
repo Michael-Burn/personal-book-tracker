@@ -6086,6 +6086,12 @@ textarea:user-invalid {
     color: var(--color-text-secondary);
     margin: 0 0 6px;
 }
+.qc-card--visible {
+    transition: opacity 0.22s ease;
+}
+.qc-card--fading {
+    opacity: 0.35;
+}
 .qc-card--empty {
     display: flex;
     flex-direction: column;
