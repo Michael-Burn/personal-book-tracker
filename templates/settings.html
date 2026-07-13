@@ -141,5 +141,173 @@
         </div>
     </section>
 
+    <div class="sett-divider" role="presentation"></div>
+
+    <!-- ── Data / Export Reading History ───────────────────── -->
+    <section class="sett-panel" aria-labelledby="settDataTitle" id="export-reading-history">
+        <div class="sett-panel-info">
+            <div class="sett-panel-icon sett-icon--indigo">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </div>
+            <h2 class="sett-panel-title" id="settDataTitle">Data</h2>
+            <p class="sett-panel-desc">Export Reading History</p>
+            <p class="sett-panel-desc sett-panel-desc--spaced">Download a personal archive of your reading journey.</p>
+        </div>
+        <div class="sett-panel-form">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% for category, message in messages %}
+                {% if category == 'export_error' %}
+                <div class="alert-error">{{ message }}</div>
+                {% endif %}
+              {% endfor %}
+            {% endwith %}
+
+            {% if (export_book_count or 0) == 0 %}
+            <p class="sett-export-empty" role="status">No books available to export.</p>
+            <div class="sett-form-footer">
+                <button type="button" class="sett-btn sett-btn--primary" disabled aria-disabled="true">Download</button>
+            </div>
+            {% else %}
+            <form id="settExportForm" method="GET" action="{{ url_for('export_history') }}" class="sett-export-form">
+                <input type="hidden" name="theme" id="settExportTheme" value="light">
+
+                <fieldset class="sett-export-types" role="radiogroup" aria-label="Export Type">
+                    <legend class="sett-theme-legend">Export Type</legend>
+
+                    <label class="sett-theme-option">
+                        <input type="radio" name="type" value="csv" checked data-export-type="csv">
+                        <span class="sett-theme-option-copy">
+                            <span class="sett-theme-option-label">CSV</span>
+                            <span class="sett-theme-option-desc">Excel, Google Sheets, analysis, and backup.</span>
+                        </span>
+                    </label>
+                    <label class="sett-theme-option">
+                        <input type="radio" name="type" value="excel" data-export-type="excel">
+                        <span class="sett-theme-option-copy">
+                            <span class="sett-theme-option-label">Excel</span>
+                            <span class="sett-theme-option-desc">Formatted workbook with history and summary sheets.</span>
+                        </span>
+                    </label>
+                    <label class="sett-theme-option">
+                        <input type="radio" name="type" value="pdf" data-export-type="pdf">
+                        <span class="sett-theme-option-copy">
+                            <span class="sett-theme-option-label">Reading Report (PDF)</span>
+                            <span class="sett-theme-option-desc">A polished, printable reading report.</span>
+                        </span>
+                    </label>
+                    <label class="sett-theme-option">
+                        <input type="radio" name="type" value="json" data-export-type="json">
+                        <span class="sett-theme-option-copy">
+                            <span class="sett-theme-option-label">Complete Backup (JSON)</span>
+                            <span class="sett-theme-option-desc">Machine-readable archive for future migration.</span>
+                        </span>
+                    </label>
+                </fieldset>
+
+                <div class="sett-export-filters" id="settExportFilters" data-export-filters>
+                    <p class="sett-theme-legend">Optional Filters</p>
+                    <p class="sett-hint sett-hint--filters">Filters apply to CSV, Excel, and PDF. Complete Backup always includes your full library.</p>
+
+                    <div class="sett-export-filter-grid">
+                        <div class="sett-field">
+                            <label for="settExportStatus">Status</label>
+                            <select id="settExportStatus" name="status">
+                                <option value="all">All Books</option>
+                                <option value="finished">Finished</option>
+                                <option value="reading">Currently Reading</option>
+                                <option value="want_to_read">Want To Read</option>
+                                <option value="wild">Wild Books</option>
+                            </select>
+                        </div>
+                        <div class="sett-field">
+                            <label for="settExportAuthor">Author</label>
+                            <select id="settExportAuthor" name="author">
+                                <option value="">Any author</option>
+                                {% for author in export_authors %}
+                                <option value="{{ author }}">{{ author }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="sett-field">
+                            <label for="settExportRating">Rating</label>
+                            <select id="settExportRating" name="rating">
+                                <option value="">Any rating</option>
+                                <option value="5">5 ★</option>
+                                <option value="4">4 ★</option>
+                                <option value="3">3 ★</option>
+                                <option value="2">2 ★</option>
+                                <option value="1">1 ★</option>
+                            </select>
+                        </div>
+                        <div class="sett-field">
+                            <label for="settExportYear">Year</label>
+                            <select id="settExportYear" name="year">
+                                <option value="">Any year</option>
+                                {% for year in export_years %}
+                                <option value="{{ year }}">{{ year }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sett-form-footer">
+                    <button type="submit" class="sett-btn sett-btn--primary" id="settExportDownload">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Download
+                    </button>
+                </div>
+            </form>
+            <script>
+            (function () {
+                var form = document.getElementById('settExportForm');
+                if (!form) return;
+                var themeInput = document.getElementById('settExportTheme');
+                var filters = document.getElementById('settExportFilters');
+                var filterControls = filters
+                    ? filters.querySelectorAll('select')
+                    : [];
+
+                function resolvedTheme() {
+                    var stored = localStorage.getItem('kwalitec-theme') || 'system';
+                    if (stored === 'dark') return 'dark';
+                    if (stored === 'light') return 'light';
+                    return window.matchMedia('(prefers-color-scheme: dark)').matches
+                        ? 'dark'
+                        : 'light';
+                }
+
+                function syncTheme() {
+                    if (themeInput) themeInput.value = resolvedTheme();
+                }
+
+                function selectedType() {
+                    var checked = form.querySelector('input[name="type"]:checked');
+                    return checked ? checked.value : 'csv';
+                }
+
+                function syncFilters() {
+                    var isBackup = selectedType() === 'json';
+                    if (filters) {
+                        filters.classList.toggle('is-disabled', isBackup);
+                        filters.setAttribute('aria-disabled', isBackup ? 'true' : 'false');
+                    }
+                    filterControls.forEach(function (el) {
+                        el.disabled = isBackup;
+                    });
+                }
+
+                form.querySelectorAll('input[name="type"]').forEach(function (input) {
+                    input.addEventListener('change', syncFilters);
+                });
+                form.addEventListener('submit', syncTheme);
+                syncTheme();
+                syncFilters();
+            })();
+            </script>
+            {% endif %}
+        </div>
+    </section>
+
 </div>
 {% endblock %}

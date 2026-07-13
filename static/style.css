@@ -2953,6 +2953,63 @@ a.admin-btn--danger    { background: var(--color-danger-light); color: var(--col
 
 .sett-icon--purple { background: var(--color-primary-soft); color: var(--color-primary); }
 .sett-icon--teal   { background: rgba(20,184,166,0.12); color: var(--color-success); }
+.sett-icon--indigo {
+    background: rgba(79, 70, 229, 0.12);
+    color: var(--color-primary-ink);
+}
+
+.sett-panel-desc--spaced {
+    margin-top: 8px;
+}
+
+.sett-export-empty {
+    margin: 0 0 8px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: var(--color-primary-soft);
+    color: var(--color-text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.sett-export-types {
+    border: 0;
+    margin: 0 0 22px;
+    padding: 0;
+    display: grid;
+    gap: 10px;
+}
+
+.sett-export-filters {
+    margin-bottom: 8px;
+    transition: opacity 0.18s;
+}
+
+.sett-export-filters.is-disabled {
+    opacity: 0.55;
+}
+
+.sett-hint--filters {
+    margin: 0 0 14px;
+}
+
+.sett-export-filter-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 16px;
+}
+
+.sett-btn:disabled,
+.sett-btn[aria-disabled="true"] {
+    opacity: 0.45;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+@media (max-width: 680px) {
+    .sett-export-filter-grid { grid-template-columns: 1fr; }
+}
 
 .sett-panel-title {
     font-size: 1.05rem;

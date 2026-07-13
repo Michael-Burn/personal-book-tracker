@@ -38,6 +38,7 @@ from services.reading_service import ReadingService  # noqa: E402
 from services.statistics_service import StatisticsService  # noqa: E402
 from services.share_engine import ShareEngine, ShareFormat  # noqa: E402
 from services.book_metadata_service import BookMetadataService  # noqa: E402
+from services.export_service import ExportService, ExportError  # noqa: E402
 from domain.reading_status import ReadingStatus  # noqa: E402
 from config.media_settings import MediaSettings  # noqa: E402
 from utils import has_rating, since_date, safe_next_url, sort_books_by_date_added  # noqa: E402
@@ -67,6 +68,7 @@ media_service = MediaService(settings=_media_settings)
 reading_service = ReadingService()
 statistics_service = StatisticsService()
 book_metadata_service = BookMetadataService()
+export_service = ExportService(reading_service, statistics_service)
 share_engine = ShareEngine(
     cover_resolver=media_service.resolve_book_cover_path,
 )
@@ -436,11 +438,103 @@ def change_password():
             logout_user()
             flash('Password updated. Please sign in with your new password.', 'pw_success')
             return redirect(url_for('login'))
+
+    export_books = (
+        Book.query
+        .filter_by(user_id=current_user.id)
+        .options(selectinload(Book.quotes))
+        .all()
+    )
+    export_opts = export_service.filter_options(export_books)
     return render_template(
         'settings.html',
         error=error,
         security_questions=SECURITY_QUESTIONS,
         user_security_question=current_user.security_question,
+        export_book_count=export_opts['book_count'],
+        export_authors=export_opts['authors'],
+        export_years=export_opts['years'],
+    )
+
+
+@app.route('/export/history')
+@login_required
+@limiter.limit('30 per minute')
+def export_history():
+    """Download the current user's reading history (CSV / Excel / PDF / JSON).
+
+    Always scoped to ``current_user.id`` — admins cannot export another user's
+    library through this endpoint.
+    """
+    export_type = (request.args.get('type') or 'csv').strip().lower()
+    status = (request.args.get('status') or 'all').strip().lower()
+    author = (request.args.get('author') or '').strip()
+    theme = (request.args.get('theme') or 'light').strip().lower()
+
+    rating = None
+    raw_rating = (request.args.get('rating') or '').strip()
+    if raw_rating:
+        try:
+            rating = int(raw_rating)
+        except (TypeError, ValueError):
+            flash('Rating filter must be a number between 1 and 5.', 'export_error')
+            return redirect(url_for('change_password'))
+        if rating < 1 or rating > 5:
+            flash('Rating filter must be between 1 and 5.', 'export_error')
+            return redirect(url_for('change_password'))
+
+    year = None
+    raw_year = (request.args.get('year') or '').strip()
+    if raw_year:
+        try:
+            year = int(raw_year)
+        except (TypeError, ValueError):
+            flash('Year filter must be a valid year.', 'export_error')
+            return redirect(url_for('change_password'))
+
+    books = (
+        Book.query
+        .filter_by(user_id=current_user.id)
+        .options(selectinload(Book.quotes))
+        .order_by(Book.date_added.desc())
+        .all()
+    )
+    goals = (
+        ReadingGoal.query
+        .filter_by(user_id=current_user.id)
+        .order_by(ReadingGoal.year.desc())
+        .all()
+    )
+
+    try:
+        buf, filename, mimetype = export_service.export(
+            export_type=export_type,
+            books=books,
+            goals=goals,
+            username=current_user.username,
+            user_created_at=current_user.created_at,
+            avatar=current_user.avatar,
+            status=status,
+            author=author or None,
+            rating=rating,
+            year=year,
+            theme=theme,
+        )
+    except ExportError as exc:
+        flash(exc.message, 'export_error')
+        return redirect(url_for('change_password'))
+    except Exception:
+        app.logger.exception(
+            'Export failed for user_id=%s type=%s', current_user.id, export_type
+        )
+        flash('Could not generate your export. Please try again.', 'export_error')
+        return redirect(url_for('change_password'))
+
+    return send_file(
+        buf,
+        mimetype=mimetype,
+        as_attachment=True,
+        download_name=filename,
     )
 
 

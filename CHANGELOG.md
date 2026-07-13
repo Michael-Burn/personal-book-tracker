@@ -4,6 +4,25 @@ All notable changes to Kwalitec Library are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Version 1.2.0
+
+### Added
+
+- **Export Reading History** — download a personal archive from Settings as CSV, Excel, PDF reading report, or complete JSON backup
+- Optional export filters (status, author, rating, year) for CSV, Excel, and PDF
+- Official **RELEASE_PROTOCOL.md** defining branch strategy, versioning, and production release steps
+
+### Improved
+
+- Persist book covers as database data-URIs with admin cover backfill tooling
+- Theme toggle and dark-mode visibility across home snapshot, admin, and share surfaces
+- Cover upload reliability (CSRF handling for large images; batched backfill)
+
+### Fixed
+
+- Admin Tools section visibility when nested inside modal overlay
+- Home snapshot card contrast in dark mode
+
 ## Version 1.0
 
 ### Added
