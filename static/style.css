@@ -1667,6 +1667,7 @@ body.sp-body {
     font-style: italic;
     font-weight: 400;
     margin: 0 0 9px;
+    white-space: pre-wrap;
 }
 .qc-meta {
     display: flex;
@@ -1692,13 +1693,22 @@ body.sp-body {
     font-family: inherit;
     color: var(--color-text);
     background: var(--color-surface-muted);
-    transition: border-color 0.15s ease;
+    transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
     box-sizing: border-box;
 }
 .qm-textarea:focus {
     outline: none;
     border-color: var(--color-primary);
     background: var(--color-surface);
+}
+.qm-textarea.ds-surface--reading,
+.qm-textarea.ds-surface--reading:focus {
+    background: var(--reading-bg);
+    color: var(--reading-text);
+    border-color: var(--reading-border);
+}
+.qm-textarea.ds-surface--reading:focus {
+    border-color: var(--color-primary);
 }
 
 /* ── Quotes Page (qt-*) ──────────────────────────────────── */
@@ -1779,6 +1789,7 @@ body.sp-body {
     color: var(--color-text);
     font-style: italic;
     margin: 0;
+    white-space: pre-wrap;
 }
 .qt-entry-meta {
     grid-column: 1; grid-row: 2;
@@ -5877,6 +5888,13 @@ textarea:user-invalid {
     line-height: 1.45;
 }
 .ry-journey-notes--light strong { color: var(--color-text-primary); }
+.ry-journey-notes--light.ds-surface--reading {
+    padding: 12px 14px;
+    color: var(--reading-muted);
+}
+.ry-journey-notes--light.ds-surface--reading strong {
+    color: var(--reading-text);
+}
 
 .ry-feature-card {
     display: grid;
@@ -5988,6 +6006,7 @@ textarea:user-invalid {
     line-height: 1.65;
     font-style: italic;
     color: var(--color-text-primary);
+    white-space: pre-wrap;
 }
 .ry-quote-footer {
     font-size: 0.85rem;

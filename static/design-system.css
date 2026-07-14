@@ -19,7 +19,7 @@
     --color-primary-soft-strong: rgba(91, 84, 232, 0.16);
     --color-danger-hover: #b91c1c;
     --color-danger-active: #991B1B;
-    --color-secondary: #475569;
+    --color-secondary: #52525B;
     --color-success: #16A34A;
     --color-success-soft: rgba(22, 163, 74, 0.10);
     --color-warning: #D97706;
@@ -28,22 +28,29 @@
     --color-danger-soft: rgba(220, 38, 38, 0.10);
     --color-danger-light: #FEE2E2;
 
-    --color-text: #0F172A;
-    --color-text-muted: #64748B;
-    --color-text-subtle: #94A3B8;
+    /* Light = E-Ink: matte grey paper, crisp near-black type */
+    --color-text: #0A0A0A;
+    --color-text-muted: #52525B;
+    --color-text-subtle: #737373;
     --color-text-inverse: #FFFFFF;
 
-    --color-background: #F4F5F9;
-    --color-surface: #FFFFFF;
-    --color-surface-muted: #F8F9FC;
-    --color-surface-alt: #F8F9FC;
-    --color-card: #FFFFFF;
-    --color-border: #E5E7EB;
-    --color-border-soft: rgba(226, 232, 240, 0.7);
-    --color-border-strong: #D1D5DB;
+    --color-background: #EDEEEF;
+    --color-surface: #FAFAF9;
+    --color-surface-muted: #F2F2F0;
+    --color-surface-alt: #F2F2F0;
+    --color-card: #FAFAF9;
+    --color-border: #D4D4D8;
+    --color-border-soft: rgba(212, 212, 216, 0.75);
+    --color-border-strong: #A1A1AA;
     --color-hover: rgba(91, 84, 232, 0.06);
     --color-focus-ring: rgba(91, 84, 232, 0.22);
     --color-rating: #EAB308;
+
+    /* Sepia reading surface (journal / passage writing) */
+    --reading-bg: #F5F0E6;
+    --reading-text: #2C2416;
+    --reading-muted: #6B5D4D;
+    --reading-border: #E0D5C0;
 
     /* Status */
     --color-status-finished: #16A34A;
@@ -70,33 +77,33 @@
     --badge-rating-bg: #fef3c7;
     --badge-rating-fg: #92400e;
 
-    /* Atmosphere / page shells (preserve current Light look) */
-    --page-bg-end: rgba(165, 180, 252, 0.35);
-    --page-glow-1: rgba(199, 210, 254, 0.40);
-    --page-glow-2: rgba(233, 229, 255, 0.40);
-    --hub-page-bg: #F3F4F8;
-    --sett-page-start: #f0f0ff;
-    --sett-page-end: #e8f4ff;
-    --surface-glass: rgba(255, 255, 255, 0.90);
+    /* Atmosphere / page shells — neutral E-Ink matte (not lavender wash) */
+    --page-bg-end: rgba(113, 113, 122, 0.12);
+    --page-glow-1: rgba(161, 161, 170, 0.18);
+    --page-glow-2: rgba(113, 113, 122, 0.12);
+    --hub-page-bg: #EDEEEF;
+    --sett-page-start: #EDEEEF;
+    --sett-page-end: #E8E8EA;
+    --surface-glass: rgba(250, 250, 249, 0.92);
     --surface-glass-border: rgba(255, 255, 255, 0.55);
-    --surface-glass-strong: rgba(255, 255, 255, 0.92);
-    --input-bg: #fafafa;
-    --input-bg-focus: #FFFFFF;
-    --table-header: #F8F9FC;
+    --surface-glass-strong: rgba(250, 250, 249, 0.95);
+    --input-bg: #F5F5F4;
+    --input-bg-focus: #FAFAF9;
+    --table-header: #F2F2F0;
     --table-row: transparent;
     --table-row-hover: rgba(91, 84, 232, 0.045);
-    --divider: rgba(15, 23, 42, 0.07);
-    --overlay-scrim: rgba(6, 8, 20, 0.48);
-    --chart-grid: rgba(0, 0, 0, 0.06);
-    --chart-text: #6B7280;
-    --scrollbar-track: #F1F2F6;
-    --scrollbar-thumb: #CBD5E1;
-    --scrollbar-thumb-hover: #94A3B8;
+    --divider: rgba(10, 10, 10, 0.08);
+    --overlay-scrim: rgba(6, 8, 12, 0.50);
+    --chart-grid: rgba(0, 0, 0, 0.07);
+    --chart-text: #52525B;
+    --scrollbar-track: #E8E8EA;
+    --scrollbar-thumb: #A1A1AA;
+    --scrollbar-thumb-hover: #71717A;
 
     /* Selection + inverse surfaces */
     --color-selection-bg: rgba(91, 84, 232, 0.22);
-    --color-selection-fg: #0F172A;
-    --color-surface-inverse: #1F2937;
+    --color-selection-fg: #0A0A0A;
+    --color-surface-inverse: #18181B;
     --color-on-inverse: #FFFFFF;
 
     /* Status borders (alerts / banners) */
@@ -128,14 +135,14 @@
     --brand-whatsapp: #25D366;
     --brand-whatsapp-hover: #1ebe5a;
 
-    /* Cover / media placeholders */
-    --cover-placeholder-start: #EEF1F8;
-    --cover-placeholder-mid: #D8DEF0;
-    --cover-placeholder-end: #C4CEE8;
+    /* Cover / media placeholders — neutral paper greys */
+    --cover-placeholder-start: #E8E8EA;
+    --cover-placeholder-mid: #D4D4D8;
+    --cover-placeholder-end: #A1A1AA;
 
     /* Auth panel (login form side) */
-    --auth-panel-bg: #EEF2FF;
-    --login-shell-bg: #0D1117;
+    --auth-panel-bg: #F2F2F0;
+    --login-shell-bg: #000000;
     --login-brand-bg: #1D318F;
 
     /* Spacing scale */
@@ -168,13 +175,13 @@
     --line-normal: 1.5;
 
     /* Shadows */
-    --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 2px 8px rgba(15, 23, 42, 0.04);
-    --shadow-md: 0 4px 16px rgba(15, 23, 42, 0.06);
-    --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.10);
+    --shadow-sm: 0 1px 2px rgba(10, 10, 10, 0.04), 0 2px 8px rgba(10, 10, 10, 0.04);
+    --shadow-md: 0 4px 16px rgba(10, 10, 10, 0.06);
+    --shadow-lg: 0 12px 32px rgba(10, 10, 10, 0.10);
     /* Button depth: normal → hover → pressed */
-    --shadow-btn: 0 1px 2px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(91, 84, 232, 0.08);
+    --shadow-btn: 0 1px 2px rgba(10, 10, 10, 0.06), 0 1px 3px rgba(91, 84, 232, 0.08);
     --shadow-btn-hover: 0 4px 14px rgba(91, 84, 232, 0.20);
-    --shadow-btn-active: 0 1px 2px rgba(15, 23, 42, 0.08);
+    --shadow-btn-active: 0 1px 2px rgba(10, 10, 10, 0.08);
 
     /* Transitions */
     --transition-fast: 150ms ease;
@@ -228,7 +235,7 @@
     --color-bg: var(--color-background);
     --color-text-primary: var(--color-text);
     --color-text-secondary: var(--color-text-muted);
-    --color-muted-surface: #F1F2F6;
+    --color-muted-surface: #E8E8EA;
     --color-accent: var(--color-success);
     --surface-card: var(--color-surface);
     --shadow-soft: var(--shadow-sm);
@@ -291,7 +298,7 @@
     --color-primary-ink: #A5A0FF;
     --color-primary-soft: rgba(101, 94, 245, 0.18);
     --color-primary-soft-strong: rgba(101, 94, 245, 0.28);
-    --color-secondary: #B5B8C0;
+    --color-secondary: #8A8A90;
     --color-success: #22C55E;
     --color-success-soft: rgba(34, 197, 94, 0.16);
     --color-warning: #F59E0B;
@@ -302,22 +309,29 @@
     --color-danger-hover: #DC2626;
     --color-danger-active: #B91C1C;
 
-    --color-text: #F4F4F6;
-    --color-text-muted: #B5B8C0;
-    --color-text-subtle: #8B909A;
+    /* Dark = Midnight: OLED black, muted / dim grey type */
+    --color-text: #B8B8BC;
+    --color-text-muted: #808086;
+    --color-text-subtle: #5C5C62;
     --color-text-inverse: #FFFFFF;
 
-    --color-background: #121417;
-    --color-surface: #1A1D22;
-    --color-surface-muted: #20242A;
-    --color-surface-alt: #20242A;
-    --color-card: #20242A;
-    --color-border: #30343B;
-    --color-border-soft: rgba(48, 52, 59, 0.85);
-    --color-border-strong: #3D434C;
-    --color-hover: rgba(108, 99, 255, 0.12);
-    --color-focus-ring: rgba(108, 99, 255, 0.35);
+    --color-background: #000000;
+    --color-surface: #0A0A0B;
+    --color-surface-muted: #121214;
+    --color-surface-alt: #121214;
+    --color-card: #121214;
+    --color-border: #1F1F22;
+    --color-border-soft: rgba(31, 31, 34, 0.90);
+    --color-border-strong: #2E2E32;
+    --color-hover: rgba(101, 94, 245, 0.12);
+    --color-focus-ring: rgba(101, 94, 245, 0.35);
     --color-rating: #FBBF24;
+
+    /* Sepia reading surface — warm near-black so Midnight wins at night */
+    --reading-bg: #12100C;
+    --reading-text: #C4B8A5;
+    --reading-muted: #8A7E6E;
+    --reading-border: #2A2418;
 
     --color-status-finished: #22C55E;
     --color-status-reading: #818CF8;
@@ -342,32 +356,32 @@
     --badge-rating-bg: rgba(251, 191, 36, 0.16);
     --badge-rating-fg: #FDE68A;
 
-    --page-bg-end: rgba(108, 99, 255, 0.08);
-    --page-glow-1: rgba(108, 99, 255, 0.14);
-    --page-glow-2: rgba(34, 197, 94, 0.06);
-    --hub-page-bg: #121417;
-    --sett-page-start: #121417;
-    --sett-page-end: #161A20;
-    --surface-glass: rgba(26, 29, 34, 0.92);
-    --surface-glass-border: rgba(48, 52, 59, 0.9);
-    --surface-glass-strong: rgba(32, 36, 42, 0.95);
-    --input-bg: #161A20;
-    --input-bg-focus: #1A1D22;
-    --table-header: #1A1D22;
+    --page-bg-end: rgba(101, 94, 245, 0.04);
+    --page-glow-1: rgba(101, 94, 245, 0.07);
+    --page-glow-2: rgba(255, 255, 255, 0.03);
+    --hub-page-bg: #000000;
+    --sett-page-start: #000000;
+    --sett-page-end: #050505;
+    --surface-glass: rgba(10, 10, 11, 0.94);
+    --surface-glass-border: rgba(31, 31, 34, 0.95);
+    --surface-glass-strong: rgba(18, 18, 20, 0.96);
+    --input-bg: #0A0A0B;
+    --input-bg-focus: #121214;
+    --table-header: #0A0A0B;
     --table-row: transparent;
-    --table-row-hover: rgba(108, 99, 255, 0.08);
-    --divider: rgba(255, 255, 255, 0.08);
-    --overlay-scrim: rgba(0, 0, 0, 0.62);
-    --chart-grid: rgba(255, 255, 255, 0.08);
-    --chart-text: #B5B8C0;
-    --scrollbar-track: #1A1D22;
-    --scrollbar-thumb: #3D434C;
-    --scrollbar-thumb-hover: #64748B;
+    --table-row-hover: rgba(101, 94, 245, 0.08);
+    --divider: rgba(255, 255, 255, 0.06);
+    --overlay-scrim: rgba(0, 0, 0, 0.72);
+    --chart-grid: rgba(255, 255, 255, 0.06);
+    --chart-text: #808086;
+    --scrollbar-track: #0A0A0B;
+    --scrollbar-thumb: #2E2E32;
+    --scrollbar-thumb-hover: #5C5C62;
 
     --color-selection-bg: rgba(101, 94, 245, 0.35);
-    --color-selection-fg: #F4F4F6;
-    --color-surface-inverse: #0F1117;
-    --color-on-inverse: #F4F4F6;
+    --color-selection-fg: #E8E8EC;
+    --color-surface-inverse: #FAFAF9;
+    --color-on-inverse: #0A0A0A;
 
     --color-success-border: rgba(34, 197, 94, 0.30);
     --color-warning-border: rgba(245, 158, 11, 0.35);
@@ -391,22 +405,22 @@
     --medal-pink-bg: rgba(236, 72, 153, 0.16);
     --medal-pink-fg: #F9A8D4;
 
-    --cover-placeholder-start: #2A3038;
-    --cover-placeholder-mid: #22272F;
-    --cover-placeholder-end: #1A1F26;
+    --cover-placeholder-start: #1A1A1C;
+    --cover-placeholder-mid: #121214;
+    --cover-placeholder-end: #0A0A0B;
 
-    --auth-panel-bg: #161A20;
-    --login-shell-bg: #0D1117;
+    --auth-panel-bg: #0A0A0B;
+    --login-shell-bg: #000000;
     --login-brand-bg: #1D318F;
 
     --color-primary-light: #A5B4FC;
-    --color-muted-surface: #20242A;
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.24), 0 2px 8px rgba(0, 0, 0, 0.18);
-    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.28);
-    --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.36);
-    --shadow-btn: 0 1px 2px rgba(0, 0, 0, 0.28), 0 1px 3px rgba(101, 94, 245, 0.18);
+    --color-muted-surface: #121214;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.50), 0 0 0 1px rgba(255, 255, 255, 0.03);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.04);
+    --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    --shadow-btn: 0 1px 2px rgba(0, 0, 0, 0.40), 0 1px 3px rgba(101, 94, 245, 0.18);
     --shadow-btn-hover: 0 4px 14px rgba(101, 94, 245, 0.28);
-    --shadow-btn-active: 0 1px 2px rgba(0, 0, 0, 0.32);
+    --shadow-btn-active: 0 1px 2px rgba(0, 0, 0, 0.50);
     --shadow-primary: var(--shadow-btn-hover);
     --shadow-soft: var(--shadow-sm);
     --shadow-card: var(--shadow-sm);
@@ -1113,6 +1127,40 @@ textarea:focus,
     box-shadow: 0 0 0 3px var(--color-focus-ring);
 }
 .db-search { padding-left: 34px; }
+
+/* Sepia reading surface — journal / passage writing (not a global theme) */
+.ds-surface--reading {
+    background: var(--reading-bg);
+    color: var(--reading-text);
+    border: 1px solid var(--reading-border);
+    border-radius: var(--radius-sm);
+}
+.ds-surface--reading textarea,
+.ds-surface--reading .qm-textarea,
+textarea.ds-surface--reading,
+.qm-textarea.ds-surface--reading {
+    background: var(--reading-bg);
+    color: var(--reading-text);
+    border-color: var(--reading-border);
+}
+.ds-surface--reading textarea::placeholder,
+.ds-surface--reading .qm-textarea::placeholder,
+textarea.ds-surface--reading::placeholder,
+.qm-textarea.ds-surface--reading::placeholder {
+    color: var(--reading-muted);
+}
+.ds-surface--reading textarea:focus,
+.ds-surface--reading .qm-textarea:focus,
+textarea.ds-surface--reading:focus,
+.qm-textarea.ds-surface--reading:focus {
+    background: var(--reading-bg);
+    color: var(--reading-text);
+    border-color: var(--color-primary);
+}
+.ds-surface--reading strong,
+.ds-surface--reading .type-body {
+    color: var(--reading-text);
+}
 
 /* ═══════════════════════════════════════════════════════════
    6. CARDS

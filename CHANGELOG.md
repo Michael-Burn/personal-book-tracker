@@ -4,6 +4,16 @@ All notable changes to Kwalitec Library are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Version 1.2.1
+
+### Improved
+
+- **E-Ink light theme** — matte grey paper surfaces and crisp near-black type for bookshelf browsing
+- **Midnight OLED dark theme** — true black backgrounds with muted grey type for late-night tracking
+- **Sepia reading surface** (`.ds-surface--reading`) for quote and journal passage writing
+- PDF export palettes and chart theme tokens aligned with the new design-system colours
+- Settings appearance copy updated to describe Light / Dark visual intent
+
 ## Version 1.2.0
 
 ### Added

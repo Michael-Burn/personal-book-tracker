@@ -592,26 +592,28 @@ class ExportService:
     @staticmethod
     def _pdf_palette(theme: str) -> dict[str, tuple[int, int, int]]:
         if theme == 'dark':
+            # Midnight OLED — match design-system dark tokens
             return {
-                'bg': (18, 20, 23),
-                'card': (26, 30, 38),
-                'text': (243, 244, 246),
-                'muted': (156, 163, 175),
+                'bg': (0, 0, 0),
+                'card': (18, 18, 20),
+                'text': (184, 184, 188),
+                'muted': (128, 128, 134),
                 'primary': (101, 94, 245),
                 'primary_dark': (79, 72, 212),
                 'accent': (246, 200, 95),
-                'border': (42, 48, 58),
+                'border': (31, 31, 34),
                 'on_primary': (255, 255, 255),
             }
+        # Light E-Ink — match design-system light tokens
         return {
-            'bg': (248, 250, 252),
-            'card': (255, 255, 255),
-            'text': (17, 24, 39),
-            'muted': (107, 114, 128),
+            'bg': (237, 238, 239),
+            'card': (250, 250, 249),
+            'text': (10, 10, 10),
+            'muted': (82, 82, 91),
             'primary': (91, 84, 232),
             'primary_dark': (67, 56, 202),
             'accent': (246, 200, 95),
-            'border': (229, 231, 235),
+            'border': (212, 212, 216),
             'on_primary': (255, 255, 255),
         }
 

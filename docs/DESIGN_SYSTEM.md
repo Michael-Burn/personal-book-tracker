@@ -37,20 +37,20 @@ Prefer:
 
 ## Colour palette
 
-| Token | Role | Value |
-|-------|------|-------|
+| Token | Role | Value (Light / E-Ink) |
+|-------|------|----------------------|
 | `--color-primary` | Brand / primary actions | `#5B54E8` |
-| `--color-primary-hover` | Primary hover | `#4338CA` |
-| `--color-secondary` | Secondary text / chrome | `#475569` |
+| `--color-primary-hover` | Primary hover | `#635CEB` |
+| `--color-secondary` | Secondary text / chrome | `#52525B` |
 | `--color-success` | Success / finished | `#16A34A` |
 | `--color-warning` | Warning / rereading | `#D97706` |
 | `--color-danger` | Danger / delete | `#DC2626` |
-| `--color-text` | Body text | `#0F172A` |
-| `--color-text-muted` | Secondary text | `#64748B` |
-| `--color-text-subtle` | Captions / placeholders | `#94A3B8` |
-| `--color-background` | Page background | `#F4F5F9` |
-| `--color-surface` | Cards / panels | `#FFFFFF` |
-| `--color-border` | Borders | `#E5E7EB` |
+| `--color-text` | Body text | `#0A0A0A` |
+| `--color-text-muted` | Secondary text | `#52525B` |
+| `--color-text-subtle` | Captions / placeholders | `#737373` |
+| `--color-background` | Page background | `#EDEEEF` |
+| `--color-surface` | Cards / panels | `#FAFAF9` |
+| `--color-border` | Borders | `#D4D4D8` |
 | `--color-hover` | Row / control hover | soft primary tint |
 
 Legacy aliases (`--color-bg`, `--color-text-primary`, `--color-primary-dark`, …) remain for older rules in `style.css`. Prefer the canonical names above for new work.
@@ -58,6 +58,12 @@ Legacy aliases (`--color-bg`, `--color-text-primary`, `--color-primary-dark`, �
 ### Theme system (v1.1)
 
 Appearance modes: **Light**, **Dark**, **Follow System** (default).
+
+| Mode | Visual intent |
+|------|---------------|
+| Light | **E-Ink** — matte grey paper, crisp near-black type (bookshelf management) |
+| Dark | **Midnight** — OLED black, muted / dim grey type (late-night tracking) |
+| Follow System | **Adaptive** — match OS `prefers-color-scheme` (not cover-derived hues) |
 
 | Layer | Responsibility |
 |-------|----------------|
@@ -69,7 +75,9 @@ Appearance modes: **Light**, **Dark**, **Follow System** (default).
 
 Semantic aliases also available: `--bg`, `--surface`, `--surface-alt`, `--card`, `--primary`, `--text`, `--border`, `--input`, `--chart-grid`, `--chart-text`, etc.
 
-Dark palette is intentional (charcoal surfaces, not inverted light). Book covers and uploaded images are never recolored.
+Dark palette is intentional (true OLED / near-black surfaces, not inverted light). Book covers and uploaded images are never recolored.
+
+**Sepia reading surface** (`.ds-surface--reading`) is a scoped primitive for journal / passage writing — cream / soft amber on Light, warm near-black on Dark. It is **not** a fourth appearance preference.
 
 Settings → Appearance controls preference; changes apply immediately with colour-only transitions.
 

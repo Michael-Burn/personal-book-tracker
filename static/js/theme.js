@@ -84,11 +84,11 @@
             warning: cssVar('--color-warning', '#D97706'),
             warningSoft: cssVar('--color-warning-soft', 'rgba(217, 119, 6, 0.18)'),
             danger: cssVar('--color-danger', '#DC2626'),
-            text: cssVar('--chart-text', cssVar('--color-text-muted', '#6B7280')),
-            grid: cssVar('--chart-grid', 'rgba(0, 0, 0, 0.06)'),
-            surface: cssVar('--color-surface', '#FFFFFF'),
-            background: cssVar('--color-background', '#F4F5F9'),
-            border: cssVar('--color-border', '#E5E7EB')
+            text: cssVar('--chart-text', cssVar('--color-text-muted', '#52525B')),
+            grid: cssVar('--chart-grid', 'rgba(0, 0, 0, 0.07)'),
+            surface: cssVar('--color-surface', '#FAFAF9'),
+            background: cssVar('--color-background', '#EDEEEF'),
+            border: cssVar('--color-border', '#D4D4D8')
         };
     }
 
@@ -99,7 +99,7 @@
         Chart.defaults.borderColor = c.grid;
         if (Chart.defaults.plugins && Chart.defaults.plugins.tooltip) {
             Chart.defaults.plugins.tooltip.backgroundColor = c.surface;
-            Chart.defaults.plugins.tooltip.titleColor = cssVar('--color-text', '#0F172A');
+            Chart.defaults.plugins.tooltip.titleColor = cssVar('--color-text', '#0A0A0A');
             Chart.defaults.plugins.tooltip.bodyColor = c.text;
             Chart.defaults.plugins.tooltip.borderColor = c.border;
             Chart.defaults.plugins.tooltip.borderWidth = 1;
